@@ -3,8 +3,8 @@
 #include <stdlib.h>
 
 int main(int argc, char* argv[]) {
-    char *output = (char *) malloc(strlen(argv[1]) * sizeof(char));
-    char *stack = (char *) malloc(strlen(argv[1]) * sizeof(char));
+    char *output = (char *) calloc(strlen(argv[1]), sizeof(char));
+    char *stack = (char *) calloc(strlen(argv[1]), sizeof(char));
     int m = 0;
     int k = 0;
     for (int i = 0; i < strlen(argv[1]); i++) {
@@ -65,8 +65,7 @@ int main(int argc, char* argv[]) {
     int result = 0;
     k = 0;
     while (strlen(output) != 1) {
-        do {k++;}
-        while (!((output[k] == '+') | (output[k] == '-') | (output[k] == '*') | (output[k] == '/')));
+        while (!((output[k] == '+') | (output[k] == '-') | (output[k] == '*') | (output[k] == '/'))) k++;
         switch (output[k]) {
             case '+': result = (output[k - 2] - '0') + (output[k - 1] - '0');
                 break;
@@ -87,7 +86,6 @@ int main(int argc, char* argv[]) {
     }
     printf("%d\n", result);
     /* end of calculating the result */
-
  /*   for (int i = 0; i < m; i++) {
         printf("%c ", output[i]);
     }
