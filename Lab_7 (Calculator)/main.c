@@ -60,12 +60,40 @@ int main(int argc, char* argv[]) {
         k--;
         m++;
     }
-    for (int i = 0; i < m; i++) {
+
+    /* start of calculating the result */
+    int result = 0;
+    k = 0;
+    while (strlen(output) != 1) {
+        do {k++;}
+        while (!((output[k] == '+') | (output[k] == '-') | (output[k] == '*') | (output[k] == '/')));
+        switch (output[k]) {
+            case '+': result = (output[k - 2] - '0') + (output[k - 1] - '0');
+                break;
+            case '-': result = (output[k - 2] - '0') - (output[k - 1] - '0');
+                break;
+            case '*': result = (output[k - 2] - '0') * (output[k - 1] - '0');
+                break;
+            case '/': result = (int)((output[k - 2] - '0') / (output[k - 1] - '0'));
+                break;
+        }
+        output[k - 2] = (char)(result + '0');
+        for (int i = k - 1; i < strlen(output) - 2; i++) {
+            output[i] = output[i + 2];
+        }
+        int h = strlen(output);
+        for (int i = h - 1; i >= h - 2; i--) output[i] = '\0';
+        k = 0;
+    }
+    printf("%d\n", result);
+    /* end of calculating the result */
+
+ /*   for (int i = 0; i < m; i++) {
         printf("%c ", output[i]);
     }
     printf("\n");
     for (int i = 0; i < k; i++) {
         printf("%c ", stack[i]);
-    }
+    } */
     return 0;
 }
