@@ -2,6 +2,15 @@
 #include <string.h>
 #include <stdlib.h>
 
+void finding_min (int i, int p, char* x, char* min, int* num_min) {
+    for (int k = i + 1; k < p; k++) {
+        if ((x[k] < min) && (x[k] > x[i])) {
+            *min = x[k];
+            *num_min = k;
+        }
+    }
+}
+
 int check_for_bad_input (char* x) {
     int c = 1;
     for (int k = 0; k < strlen(x) - 1; k++) {
@@ -45,12 +54,7 @@ void make_some_shifts (char* x, char* y) {
             q = i + 1;
             char min = x[i + 1];
             num_min = i + 1;
-            for (int k = i + 1; k < p; k++) {
-                if ((x[k] < min) && (x[k] > x[i])) {
-                    min = x[k];
-                    num_min = k;
-                }
-            }
+            finding_min(i, p, x, &min, &num_min);
             x = swap_digits(i, num_min, x);
             x = ascending_sorting_of_tale(q, x);
             printf("%s ", x);
