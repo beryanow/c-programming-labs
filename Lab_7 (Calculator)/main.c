@@ -1,10 +1,22 @@
-//to_do: make a function to check whether the input line is valid
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
-void which_sign(char f, int* result, int result2, int result1) {
+int valid_string (char* x) {
+    int left_brackets = 0, right_brackets = 0;
+    for (int i = 0; i < strlen(x); i++) {
+        if (!((x[i] == '+') | (x[i] == '-') | (x[i] == '*') | (x[i] == '/') | (x[i] == ' ') | ((x[i] >= '0') && (x[i] <= '9')) | (x[i] == ')') | (x[i] == '('))) {
+            return 0;
+        }
+        if (x[i] == '(') left_brackets++;
+        else if (x[i] == ')') right_brackets++;
+        if (right_brackets > left_brackets) return 0;
+    }
+    if (right_brackets != left_brackets) return 0;
+    return 1;
+}
+
+int which_sign(char f, int* result, int result2, int result1) {
     switch (f) {
         case '+':
             *result = result2 + result1;
@@ -16,9 +28,11 @@ void which_sign(char f, int* result, int result2, int result1) {
             *result = result2 * result1;
             break;
         case '/':
-            *result = result2 / result1;
+            if (result1 != 0) *result = result2 / result1;
+                        else return 1;
             break;
     }
+    return 0;
 }
 
 void displacing_to_the_right_by_one(int k, char** output) {
@@ -78,57 +92,71 @@ int main(int argc, char *argv[]) {
     int i = 0; //index of input line
 
     /* creating Reverse Polish notation */
-    while (i != strlen(argv[1])) {
-        if ((argv[1][i] >= '0') && (argv[1][i] <= '9')) {
-            int n = i;
-            while ((argv[1][i] >= '0') && (argv[1][i] <= '9')) {
+    if (valid_string(argv[1]) == 0) {
+        printf("syntax error");
+        return 0;
+    }
+    else {
+        while (i != strlen(argv[1])) {
+            if (argv[1][i] == '.') {
+                printf("syntax error");
+                return 0;
+            }
+            if ((argv[1][i] >= '0') && (argv[1][i] <= '9')) {
+                int n = i;
+                while ((argv[1][i] >= '0') && (argv[1][i] <= '9')) {
+                    i++;
+                }
+                numbers_into_brackets(argv[1], &output, &m, n, i);
+            } else if ((argv[1][i] == '*') | (argv[1][i] == '/')) {
+                while (1) {
+                    if ((stack[k - 1] == '*') | (stack[k - 1] == '/')) {
+                        output[m] = stack[k - 1];
+                        stack[k - 1] = argv[1][i];
+                        m++;
+                    } else {
+                        stack[k] = argv[1][i];
+                        k++;
+                        break;
+                    }
+                    k--;
+                }
                 i++;
-            }
-            numbers_into_brackets(argv[1], &output, &m, n, i);
-        } else if ((argv[1][i] == '*') | (argv[1][i] == '/')) {
-            while (1) {
-                if ((stack[k - 1] == '*') | (stack[k - 1] == '/')) {
-                    output[m] = stack[k - 1];
-                    stack[k - 1] = argv[1][i];
-                    m++;
-                } else {
-                    stack[k] = argv[1][i];
-                    k++;
-                    break;
+            } else if ((argv[1][i] == '+') | (argv[1][i] == '-')) {
+                while (1) {
+                    if ((stack[k - 1] == '*') | (stack[k - 1] == '/') | (stack[k - 1] == '+') | (stack[k - 1] == '-')) {
+                        output[m] = stack[k - 1];
+                        stack[k - 1] = argv[1][i];
+                        m++;
+                    } else {
+                        stack[k] = argv[1][i];
+                        k++;
+                        break;
+                    }
+                    k--;
                 }
-                k--;
-            }
-            i++;
-        } else if ((argv[1][i] == '+') | (argv[1][i] == '-')) {
-            while (1) {
-                if ((stack[k - 1] == '*') | (stack[k - 1] == '/') | (stack[k - 1] == '+') | (stack[k - 1] == '-')) {
-                    output[m] = stack[k - 1];
-                    stack[k - 1] = argv[1][i];
-                    m++;
-                } else {
-                    stack[k] = argv[1][i];
-                    k++;
-                    break;
+                i++;
+            } else if (argv[1][i] == '(') {
+                stack[k] = argv[1][i];
+                k++;
+                i++;
+            } else if (argv[1][i] == ')') {
+                if (stack[k - 1] == '(') {
+                    printf("syntax error");
+                    return 0;
                 }
-                k--;
-            }
-            i++;
-        } else if (argv[1][i] == '(') {
-            stack[k] = argv[1][i];
-            k++;
-            i++;
-        } else if (argv[1][i] == ')') {
-            int c = k - 1, z;
-            while (stack[k] != '(') k--;
-            for (z = c; z > k; z--) {
-                output[m] = stack[z];
-                m++;
+                int c = k - 1, z;
+                while (stack[k] != '(') k--;
+                for (z = c; z > k; z--) {
+                    output[m] = stack[z];
+                    m++;
+                    stack[z] = '\0';
+                }
                 stack[z] = '\0';
-            }
-            stack[z] = '\0';
-            k = z;
-            i++;
-        } else i++;
+                k = z;
+                i++;
+            } else i++;
+        }
     }
     for (int i = k - 1; i >= 0; i--) {
         output[m] = stack[i];
@@ -156,7 +184,10 @@ int main(int argc, char *argv[]) {
             k--;
         }
         calc_string_value(&output, &k, &result2);
-        which_sign(f, &result, result2, result1);
+        if (which_sign(f, &result, result2, result1) == 1) {
+            printf("division by zero");
+            return 0;
+        };
         final_result = result;
         k++;
         new_number_to_output(&result, &output, k);
