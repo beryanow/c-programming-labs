@@ -114,8 +114,7 @@ void put_to_screen(char *x, int int_part, int new_base, float dec_part) {
     }
     for (int i = 0; i < strlen(x) - 1; i++) { // перевод целой части числа в промежуточную систему счисления
         if (x[i + 1] == '.') {
-            dot_number = i +
-                         1; // DotNumber - номер позиции точки, если у числа существует дробная часть (равен -1, если дробной части нет)
+            dot_number = i + 1; // DotNumber - номер позиции точки, если у числа существует дробная часть (равен -1, если дробной части нет)
             break;
         }
     }
@@ -126,7 +125,7 @@ void put_to_screen(char *x, int int_part, int new_base, float dec_part) {
         for (int i = 0; i < 12; i++) {
             int m = (int) (dec_part * new_base);
             if (new_base <= 10) {
-                output_line[s] = (char) (m + (int) '0');
+                output_line[s] = (char)(m + (int) '0');
                 s++;
             } else add_A_to_F(m, &output_line, &s);
             dec_part = dec_part * new_base - m;
@@ -137,12 +136,12 @@ void put_to_screen(char *x, int int_part, int new_base, float dec_part) {
 }
 
 int main(int argc, char *argv[]) {
-    int OldBase = atoi(argv[1]), NewBase = atoi(argv[2]), IntPart;
-    float DecPart;
-    if (check(argv[3], OldBase, NewBase) == 0) {
-        IntPart = transfer_int(argv[3], OldBase);
-        DecPart = transfer_dec(argv[3], OldBase);
-        put_to_screen(argv[3], IntPart, NewBase, DecPart);
+    int old_base = atoi(argv[1]), new_base = atoi(argv[2]), int_part;
+    float dec_part;
+    if (check(argv[3], old_base, new_base) == 0) {
+        int_part = transfer_int(argv[3], old_base);
+        dec_part = transfer_dec(argv[3], old_base);
+        put_to_screen(argv[3], int_part, new_base, dec_part);
     }
     return 0;
 }
