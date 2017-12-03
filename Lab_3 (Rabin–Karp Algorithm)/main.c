@@ -1,62 +1,84 @@
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 
-int exponentiation (int a, int b) {
-    int c = 1;
-    for (int i = 0; i < b; i++) {
-        c *= a;
+int whether_pattern_is_empty(char *pattern) {
+    if (pattern[0] == '\0') return 1;
+    return 0;
+}
+
+void showing_algorithm_protocol (int prime_hash, int position, char* argv) {
+    printf("%d ", prime_hash);
+    int h = strlen(argv);
+    for (int i = position - h + 1; i <= position; i++) {
+        printf("%d ", i);
     }
-    return c;
 }
 
-int recalс_hash (int new_hash, char* y, int m, int i, int x) {
-    return (new_hash - ((unsigned int)y[m] % 3)) / 3 + ((unsigned int)y[i + x - 1] % 3) * exponentiation(3, x - 1);
-}
-
-int check_for_overlap (int prime_hash, int new_hash, char* x1, char* y1, int x, int i) {
-    int p = 1, a = 0;
-    if (prime_hash == new_hash) {
-        int a1;
-        for (a1 = i; a1 < i + x; a1++) {
-            if (x1[a] != y1[a1]) p = 0;
-            a++;
+int comparing_every_letter(int* g1, char* argv, char* argv1, int* position, int* g, int* check, int d) {
+    int check1 = 1;
+    *g1 = strlen(argv) - 1;
+    int c = *position - *g1;
+    for (*g = *position; *g >= c; (*g)--) {
+        if (argv1[*g] != argv[*g1]) {
+            check1 = 0;
         }
-        if (p == 1) return a1;
+        (*g1)--;
+    }
+    if (check1 == 1) {
+        *position = d;
+        *check = 1;
     }
     return -1;
 }
 
-int calc_hash (char* x) {
-    int hash = 0, p = 0;
-    for (int i = 0; i < strlen(x); i++) {
-        hash += ((unsigned int)(x[i]) % 3) * exponentiation(3, p);
-        p++;
+int powering (int prime, int i) {
+    int result = 1;
+    for (int k = 1; k <= i; k++) {
+        result *= prime;
     }
-    return hash;
+    return result;
+}
+
+void recalculating_hash (int* new_hash, char* argv, int* position, int h, int prime, int* d) {
+    *new_hash = (*new_hash - (int)(argv[(*position) - h]) % 3) / prime + (int)argv[(*position) + 1] % 3 * powering(prime, h);
+    (*position)++;
+    *d = *position;
+}
+
+void calculating_hash (char* argv, char* argv1, int* prime_hash, int* new_hash, int prime) {
+    int h = strlen(argv);
+    for (int i = 0; i < h; i++) {
+        *prime_hash += ((int)(argv[i]) % 3) * powering(prime, i);
+        *new_hash += ((int)(argv1[i]) % 3) * powering(prime, i);
+    }
 }
 
 int main(int argc, char* argv[]) {
-    int x = strlen(argv[1]), x2 = strlen(argv[2]);
-    char* part_for_new_hash = (char*)malloc(x * sizeof(char));
-    for (int i = 0; i < x; i++) {
-        part_for_new_hash[i] = argv[2][i];
-    }
-    int prime_hash = calc_hash(argv[1]), new_hash = calc_hash(part_for_new_hash), i = 0;
-    printf("%d ", prime_hash);
-    if (check_for_overlap(prime_hash, new_hash, argv[1], argv[2], x, i) != -1) {
-        printf("%d ", check_for_overlap(prime_hash, new_hash, argv[1], argv[2], x, i) - x);
+    int prime = 3, prime_hash = 0, new_hash = 0;
+    if (whether_pattern_is_empty(argv[1])) {
+        printf("no result");
         return 0;
     }
-    int m = 0;
-    for (int i = 1; i <= x2 - x + 1; i++) {
-        new_hash = recalс_hash(new_hash, argv[2], m, i ,x);
-        if (check_for_overlap(prime_hash, new_hash, argv[1], argv[2], x, i) != -1) {
-            printf("%d ", check_for_overlap(prime_hash, new_hash, argv[1], argv[2], x, i) - x);
+    calculating_hash(argv[1], argv[2], &prime_hash, &new_hash, prime);
+    int g1; // g1 is used for going through the pattern from end to start
+    int position = strlen(argv[1]) - 1;
+    int g = position, h = g; // g is used for going through the input string part from end to start
+    int check = 0, d = position; // d is used to correct position value when a result is found
+    while (!((prime_hash == new_hash) && (check == 1))) {
+        if (position > strlen(argv[2])) {
+            printf("no result");
             return 0;
         }
-        m++;
+        if (prime_hash == new_hash) {
+            int k = comparing_every_letter(&g1, argv[1], argv[2], &position, &g, &check, d);
+            if (k == -1) {
+                d = position;
+                position++;
+            }
+        }
+        else
+            recalculating_hash(&new_hash, argv[2], &position, h, prime, &d);
     }
-    printf("-1");
+    showing_algorithm_protocol(prime_hash, position, argv[1]);
     return 0;
 }
