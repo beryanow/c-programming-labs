@@ -2,121 +2,147 @@
 #include <stdlib.h>
 #include <string.h>
 
-void PrintAtoF (int x) {
-    if ((x >= 10) && (x <= 15)) {
-        printf("%c", (char)((int)('A') + x - 10));
-    }
-    else printf("%d", x);
+void printing_decimal_part(char *output_line) {
+    for (int f = 0; f < strlen(output_line); f++)
+        printf("%c", output_line[f]);
 }
 
-int ToNew (char x) {
+void deleting_useless_zeros(char **output_line) {
+    for (int f = strlen(*output_line) - 1; f >= 0; f--) {
+        if ((*output_line)[f] == '0')
+            (*output_line)[f] = '\0';
+        else break;
+    }
+}
+
+void add_A_to_F(int x, char **output, int *s) {
+    if ((x >= 10) && (x <= 15)) {
+        (*output)[*s] = (char) ((int) ('A') + x - 10);
+        (*s)++;
+    } else {
+        (*output)[(*s)] = (char) (x + (int) '0');
+        (*s)++;
+    }
+}
+
+void print_A_to_F(int x) {
+    if ((x >= 10) && (x <= 15)) {
+        printf("%c", (char) ((int) ('A') + x - 10));
+    } else printf("%d", x);
+}
+
+int to_new(char x) {
     if ((x >= 'A') && (x <= 'Z')) return x - 'A' + 10;
     else return x - '0';
 }
 
-int Check(char* x, int OldBase, int NewBase) {
-    int DeniedSymb; // DeniedSymb - показатель, существуют ли в исходном числе недопустимые символы для той системы счисления (1 - существуют, 0 - не существуют)
+int check(char *x, int old_base, int new_base) {
+    int denied_symb; // denied_symb - показатель, существуют ли в исходном числе недопустимые символы для той системы счисления (1 - существуют, 0 - не существуют)
     for (int i = 0; i < strlen(x); i++) {
         if (x[i] == '.') continue;
-        if ((OldBase < 11) && (x[i] - '0' >= OldBase)) {
-            DeniedSymb = 1;
+        if ((old_base < 11) && (x[i] - '0' >= old_base)) {
+            denied_symb = 1;
         }
-        if ((OldBase > 10) && !(((x[i] >= 'A') && (x[i] <= 'Z')) | ((x[i] >= '0') && (x[i] <= '9')))) {
-            DeniedSymb = 1;
+        if ((old_base > 10) && !(((x[i] >= 'A') && (x[i] <= 'Z')) | ((x[i] >= '0') && (x[i] <= '9')))) {
+            denied_symb = 1;
         }
     }
-    if ((OldBase > 16) | (OldBase < 2) | (NewBase > 16) | (NewBase < 2) | (DeniedSymb == 1)) {
+    if ((old_base > 16) | (old_base < 2) | (new_base > 16) | (new_base < 2) | (denied_symb == 1)) {
         printf("Bad input");
         return 1;
-    }
-    else return 0;
+    } else return 0;
 }
 
-int TransferInt(char* x, int OldBase) {
-    int new, IntPart, DotNumber = -1;
-    new = ToNew(x[0]);
+int transfer_int(char *x, int old_base) {
+    int new, int_part, dot_number = -1;
+    new = to_new(x[0]);
     for (int i = 0; i < strlen(x) - 1; i++) { // перевод целой части числа в промежуточную систему счисления
         if (x[i + 1] == '.') {
-            IntPart = new; // IntPart - целая часть числа
-            DotNumber = i + 1; // DotNumber - номер позиции точки, если у числа существует дробная часть (равен -1, если дробной части нет)
+            int_part = new; // int_part - целая часть числа
+            dot_number = i +
+                         1; // dot_number - номер позиции точки, если у числа существует дробная часть (равен -1, если дробной части нет)
             break;
-        }
-        else {
-            new = new * OldBase + ToNew(x[i + 1]);
-        }
-    }
-    if (DotNumber == -1) {
-        IntPart = new;
-    }
-    return IntPart;
-}
-
-float TransferDec(char* x, int OldBase) {
-    int DotNumber = -1;
-    for (int i = 0; i < strlen(x) - 1; i++) { // перевод целой части числа в промежуточную систему счисления
-        if (x[i + 1] == '.') {
-            DotNumber = i + 1; // DotNumber - номер позиции точки, если у числа существует дробная часть (равен -1, если дробной части нет)
-            break;
-        }
-    }
-    float DecPart;
-    if (DotNumber != -1) {
-        float OldBase1 = OldBase, new1;
-        new1 = ToNew(x[strlen(x) - 1]) / OldBase1;
-        for (int i = strlen(x) - 1; i > (DotNumber + 1); i--) {
-           new1 = (new1 + ToNew(x[i - 1])) / OldBase1;
-        }
-        DecPart = new1; // DecPart - дробная часть числа
-        return DecPart;
-    }
-}
-
-void PutToScreen(char* x, int IntPart, int NewBase, float DecPart) {
-    int a[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    int m = 0, NotDigit = 0, DotNumber = -1;;
-    float NewBase1 = NewBase;
-    while (IntPart / NewBase1 > 0) { // перевод целой части числа в новую систему счисления
-        if (NewBase > 10 && IntPart % NewBase >= 10) {
-            a[m] = IntPart % NewBase;
-            NotDigit = 1; // NotDigit - показатель, существуют ли в записи числа "цифры", превосходящие 9 (1 - существуют, 0 - не существуют)
         } else {
-            a[m] = IntPart % NewBase;
+            new = new * old_base + to_new(x[i + 1]);
         }
-        IntPart /= NewBase;
+    }
+    if (dot_number == -1) {
+        int_part = new;
+    }
+    return int_part;
+}
+
+float transfer_dec(char *x, int old_base) {
+    int dot_number = -1;
+    for (int i = 0; i < strlen(x) - 1; i++) { // перевод целой части числа в промежуточную систему счисления
+        if (x[i + 1] == '.') {
+            dot_number = i +
+                         1; // dot_number - номер позиции точки, если у числа существует дробная часть (равен -1, если дробной части нет)
+            break;
+        }
+    }
+    float dec_part;
+    if (dot_number != -1) {
+        float old_base1 = old_base, new1;
+        new1 = to_new(x[strlen(x) - 1]) / old_base1;
+        for (int i = strlen(x) - 1; i > (dot_number + 1); i--) {
+            new1 = (new1 + to_new(x[i - 1])) / old_base1;
+        }
+        dec_part = new1; // dec_part - дробная часть числа
+        return dec_part;
+    }
+}
+
+void put_to_screen(char *x, int int_part, int new_base, float dec_part) {
+    int a[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    int m = 0, not_digit = 0, dot_number = -1;;
+    float new_base1 = new_base;
+    while (int_part / new_base1 > 0) { // перевод целой части числа в новую систему счисления
+        if (new_base > 10 && int_part % new_base >= 10) {
+            a[m] = int_part % new_base;
+            not_digit = 1; // NotDigit - показатель, существуют ли в записи числа "цифры", превосходящие 9 (1 - существуют, 0 - не существуют)
+        } else {
+            a[m] = int_part % new_base;
+        }
+        int_part /= new_base;
         m++;
     }
     for (int i = m - 1; i >= 0; i--) { // вывод целой части нового числа
-        if (NotDigit == 0) {
+        if (not_digit == 0) {
             printf("%d", a[i]);
-        }
-        else PrintAtoF(a[i]);
+        } else print_A_to_F(a[i]);
     }
     for (int i = 0; i < strlen(x) - 1; i++) { // перевод целой части числа в промежуточную систему счисления
         if (x[i + 1] == '.') {
-            DotNumber = i + 1; // DotNumber - номер позиции точки, если у числа существует дробная часть (равен -1, если дробной части нет)
+            dot_number = i +
+                         1; // DotNumber - номер позиции точки, если у числа существует дробная часть (равен -1, если дробной части нет)
             break;
         }
     }
-    if (DotNumber != -1) { // вывод дробной части нового числа
+    char *output_line = (char *) calloc(12, sizeof(char));
+    int s = 0;
+    if (dot_number != -1) { // вывод дробной части нового числа
         printf(".");
         for (int i = 0; i < 12; i++) {
-            int m = (int)(DecPart * NewBase);
-            if (NewBase <= 10) {
-                printf("%d", m);
-            }
-            else PrintAtoF(m);
-            DecPart = DecPart * NewBase - m;
+            int m = (int) (dec_part * new_base);
+            if (new_base <= 10) {
+                output_line[s] = (char) (m + (int) '0');
+                s++;
+            } else add_A_to_F(m, &output_line, &s);
+            dec_part = dec_part * new_base - m;
         }
+        deleting_useless_zeros(&output_line);
+        printing_decimal_part(output_line);
     }
 }
 
 int main(int argc, char *argv[]) {
     int OldBase = atoi(argv[1]), NewBase = atoi(argv[2]), IntPart;
     float DecPart;
-    if (Check(argv[3], OldBase, NewBase) == 0) {
-        IntPart = TransferInt(argv[3], OldBase);
-        DecPart = TransferDec(argv[3], OldBase);
-        PutToScreen(argv[3], IntPart, NewBase, DecPart);
+    if (check(argv[3], OldBase, NewBase) == 0) {
+        IntPart = transfer_int(argv[3], OldBase);
+        DecPart = transfer_dec(argv[3], OldBase);
+        put_to_screen(argv[3], IntPart, NewBase, DecPart);
     }
     return 0;
 }
