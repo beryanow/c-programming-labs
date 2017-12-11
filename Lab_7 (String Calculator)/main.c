@@ -54,7 +54,7 @@ void displacing_to_the_left_by_two (int k, char** output) {
 }
 
 
-int new_number_to_output (int* result, char** output, int k) {
+void new_number_to_output (int* result, char** output, int k) {
     while (*result != 0) {
         displacing_to_the_right_by_one(k, output);
         (*output)[k] = (char)((*result) % 10 + '0');
