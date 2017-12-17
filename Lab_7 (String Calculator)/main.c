@@ -29,7 +29,7 @@ int which_sign(char f, int* result, int result2, int result1) {
             break;
         case '/':
             if (result1 != 0) *result = result2 / result1;
-                        else return 1;
+            else return 1;
             break;
     }
     return 0;
@@ -84,79 +84,71 @@ void numbers_into_brackets (char* x, char** output, int* m, int n, int i) {
     (*m)++;
 }
 
-int main(int argc, char *argv[]) {
-    char *output = (char *) calloc(strlen(argv[1]), sizeof(char));
-    char *stack = (char *) calloc(strlen(argv[1]), sizeof(char));
+char* make_polish_notation (char* str1, int* wrong1) {
+    char *output = (char *) calloc(strlen(str1), sizeof(char));
+    char *stack = (char *) calloc(strlen(str1), sizeof(char));
     int m = 0; //index of output line
     int k = 0; //index of stack line
     int i = 0; //index of input line
-
-    /* creating Reverse Polish notation */
-    if (valid_string(argv[1]) == 0) {
-        printf("syntax error");
-        return 0;
-    }
-    else {
-        while (i != strlen(argv[1])) {
-            if (argv[1][i] == '.') {
-                printf("syntax error");
-                return 0;
-            }
-            if ((argv[1][i] >= '0') && (argv[1][i] <= '9')) {
-                int n = i;
-                while ((argv[1][i] >= '0') && (argv[1][i] <= '9')) {
-                    i++;
-                }
-                numbers_into_brackets(argv[1], &output, &m, n, i);
-            } else if ((argv[1][i] == '*') | (argv[1][i] == '/')) {
-                while (1) {
-                    if ((stack[k - 1] == '*') | (stack[k - 1] == '/')) {
-                        output[m] = stack[k - 1];
-                        stack[k - 1] = argv[1][i];
-                        m++;
-                    } else {
-                        stack[k] = argv[1][i];
-                        k++;
-                        break;
-                    }
-                    k--;
-                }
-                i++;
-            } else if ((argv[1][i] == '+') | (argv[1][i] == '-')) {
-                while (1) {
-                    if ((stack[k - 1] == '*') | (stack[k - 1] == '/') | (stack[k - 1] == '+') | (stack[k - 1] == '-')) {
-                        output[m] = stack[k - 1];
-                        stack[k - 1] = argv[1][i];
-                        m++;
-                    } else {
-                        stack[k] = argv[1][i];
-                        k++;
-                        break;
-                    }
-                    k--;
-                }
-                i++;
-            } else if (argv[1][i] == '(') {
-                stack[k] = argv[1][i];
-                k++;
-                i++;
-            } else if (argv[1][i] == ')') {
-                if (stack[k - 1] == '(') {
-                    printf("syntax error");
-                    return 0;
-                }
-                int c = k - 1, z;
-                while (stack[k] != '(') k--;
-                for (z = c; z > k; z--) {
-                    output[m] = stack[z];
-                    m++;
-                    stack[z] = '\0';
-                }
-                stack[z] = '\0';
-                k = z;
-                i++;
-            } else i++;
+    while (i != strlen(str1)) {
+        if (str1[i] == '.') {
+            *wrong1 = 1;
+            return output;
         }
+        if ((str1[i] >= '0') && (str1[i] <= '9')) {
+            int n = i;
+            while ((str1[i] >= '0') && (str1[i] <= '9')) {
+                i++;
+            }
+            numbers_into_brackets(str1, &output, &m, n, i);
+        } else if ((str1[i] == '*') | (str1[i] == '/')) {
+            while (1) {
+                if ((stack[k - 1] == '*') | (stack[k - 1] == '/')) {
+                    output[m] = stack[k - 1];
+                    stack[k - 1] = str1[i];
+                    m++;
+                } else {
+                    stack[k] = str1[i];
+                    k++;
+                    break;
+                }
+                k--;
+            }
+            i++;
+        } else if ((str1[i] == '+') | (str1[i] == '-')) {
+            while (1) {
+                if ((stack[k - 1] == '*') | (stack[k - 1] == '/') | (stack[k - 1] == '+') | (stack[k - 1] == '-')) {
+                    output[m] = stack[k - 1];
+                    stack[k - 1] = str1[i];
+                    m++;
+                } else {
+                    stack[k] = str1[i];
+                    k++;
+                    break;
+                }
+                k--;
+            }
+            i++;
+        } else if (str1[i] == '(') {
+            stack[k] = str1[i];
+            k++;
+            i++;
+        } else if (str1[i] == ')') {
+            if (stack[k - 1] == '(') {
+                *wrong1 = 1;
+                return output;
+            }
+            int c = k - 1, z;
+            while (stack[k] != '(') k--;
+            for (z = c; z > k; z--) {
+                output[m] = stack[z];
+                m++;
+                stack[z] = '\0';
+            }
+            stack[z] = '\0';
+            k = z;
+            i++;
+        } else i++;
     }
     for (int i = k - 1; i >= 0; i--) {
         output[m] = stack[i];
@@ -164,11 +156,12 @@ int main(int argc, char *argv[]) {
         k--;
         m++;
     }
-    /* end of creating Reverse Polish notation */
+    return output;
+}
 
-    /* result calculation */
+int result_calculation (char* output, int* wrong2) {
     int result = 0;
-    k = 0;
+    int k = 0;
     int final_result;
     while (output[strlen(output) - 1] != ')') {
         while (!((output[k] == '+') | (output[k] == '-') | (output[k] == '*') | (output[k] == '/'))) k++;
@@ -185,15 +178,44 @@ int main(int argc, char *argv[]) {
         }
         calc_string_value(&output, &k, &result2);
         if (which_sign(f, &result, result2, result1) == 1) {
-            printf("division by zero");
-            return 0;
+            *wrong2 = 1;
+            return final_result;
         };
         final_result = result;
         k++;
         new_number_to_output(&result, &output, k);
     }
+    return final_result;
+}
+
+int main(int argc, char *argv[]) {
+    int wrong1 = 0, wrong2 = 0;
+
+    // checking if symbols set in input string is correct
+    if (valid_string(argv[1]) == 0) {
+        printf("syntax error");
+        return 0;
+    }
+
+    // creating Reverse Polish notation
+    char* output = make_polish_notation(argv[1], &wrong1);
+
+    // checking if brackets sequence is correct
+    if (wrong1 == 1) {
+        printf("syntax error");
+        return 0;
+    }
+
+    // calculating result
+    int final_result = result_calculation(output, &wrong2);
+
+    // checking if division by zero exists
+    if (wrong2 == 1) {
+        printf("division be zero");
+        return 0;
+    }
+
     printf("%d\n", final_result);
-    /* end of result calculation */
 
     return 0;
 }
