@@ -2,19 +2,25 @@
 #include <string.h>
 #include <stdlib.h>
 
-void finding_min (int i, int p, char* x, char* min, int* num_min) {
+void finding_min (int i, int p, const char* x, char* min, int* num_min) {
     for (int k = i + 1; k < p; k++) {
-        if ((x[k] < min) && (x[k] > x[i])) {
+        if ((x[k] < (char) min) && (x[k] > x[i])) {
             *min = x[k];
             *num_min = k;
         }
     }
 }
 
-int check_for_bad_input (char* x) {
-    int c = 1;
-    for (int k = 0; k < strlen(x) - 1; k++) {
-        if (x[k] != x[k + 1]) c = 0;
+int check_for_bad_input (char* x, const char* y) {
+    if ((*x == '\0') | (*y == '\0'))
+        return 1;
+    int c = 0;
+    int table[256];
+    for (int i = 0; i < 256; i++)
+        table[i] = 0;
+    for (int k = 0; k <= strlen(x) - 1; k++) {
+        table[(int)x[k]]++;
+        if (((table[(int)x[k]]) > 1) | (!(((x[k] >= '0') && (x[k] <= '9'))))) return 1;
     }
     return c;
 }
@@ -35,7 +41,7 @@ char* swap_digits (int i, int num_min, char* x) {
 }
 
 char* ascending_sorting_of_tale (int q, char* x) {
-    int p = strlen(x);
+    int p = (int) strlen(x);
     for (int z = q; z < p - 1; z++) {
         for (int c = z + 1; c < p; c++) {
             if (x[z] > x[c]) {
@@ -47,7 +53,7 @@ char* ascending_sorting_of_tale (int q, char* x) {
 }
 
 void make_some_shifts (char* x, char* y) {
-    int p = strlen(x);
+    int p = (int) strlen(x);
     int num_min, q, m = 0, i = p - 2;
     while (i != -1) {
         if (x[i] < x[i + 1]) {
@@ -67,9 +73,12 @@ void make_some_shifts (char* x, char* y) {
 }
 
 int main(int argc, char* argv[]) {
-    if (check_for_bad_input(argv[1])) printf("bad input");
-    else if (check_for_available_shifts(argv[1])) {
+    if (check_for_bad_input(argv[1], argv[2])) printf("bad input");
+    else
+    if (check_for_available_shifts(argv[1])) {
+        // making shifts using Dijkstra algorithm
         make_some_shifts(argv[1], argv[2]);
     }
+
     return 0;
 }
