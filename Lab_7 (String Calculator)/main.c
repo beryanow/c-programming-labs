@@ -105,6 +105,7 @@ char* make_polish_notation (char* str1, int* wrong1) {
             while (1) {
                 if ((stack[k - 1] == '*') | (stack[k - 1] == '/')) {
                     output[m] = stack[k - 1];
+                    output[m + 1] = '\0';
                     stack[k - 1] = str1[i];
                     m++;
                 } else {
@@ -119,6 +120,7 @@ char* make_polish_notation (char* str1, int* wrong1) {
             while (1) {
                 if ((stack[k - 1] == '*') | (stack[k - 1] == '/') | (stack[k - 1] == '+') | (stack[k - 1] == '-')) {
                     output[m] = stack[k - 1];
+                    output[m + 1] = '\0';
                     stack[k - 1] = str1[i];
                     m++;
                 } else {
@@ -142,6 +144,7 @@ char* make_polish_notation (char* str1, int* wrong1) {
             while (stack[k] != '(') k--;
             for (z = c; z > k; z--) {
                 output[m] = stack[z];
+                output[m + 1] = '\0';
                 m++;
                 stack[z] = '\0';
             }
@@ -152,6 +155,7 @@ char* make_polish_notation (char* str1, int* wrong1) {
     }
     for (int i = k - 1; i >= 0; i--) {
         output[m] = stack[i];
+        output[m + 1] = '\0';
         stack[i] = '\0';
         k--;
         m++;
