@@ -42,6 +42,7 @@ int main(int argc, char *argv[]) {
     char* original_symbols = (char*)malloc(3 * sizeof(char));
     char* base64_symbols = (char*)malloc(4 * sizeof(char));
     if (e_cmd == 1) {
+        int cg = 0;
         while (j < file_size) {
             int count = 0;
             for (int p = 0; p < 3; p++) {
@@ -53,10 +54,6 @@ int main(int argc, char *argv[]) {
                     count++;
                 }
             }
-            printf("%c%c%c", (int)'s', (int)'t', (int)'i');
-            printf("%d", (int)original_file[0]);
-            printf("%d", (int)original_file[1]);
-            printf("%d", (int)original_file[2]);
             base64_symbols[0] = base64_table[((int)original_symbols[0] & 252) >> 2];
             base64_symbols[1] = base64_table[((((int)original_symbols[0] & 3) << 4) | (((int)original_symbols[1] & 240) >> 4))];
             if (count == 2) {
@@ -73,14 +70,36 @@ int main(int argc, char *argv[]) {
             }
             for (int p = 0; p < 4; p++) {
                 fputc(base64_symbols[p], outfile);
+                cg++;
+                if (cg == f_cmd_num) {
+                    fputc('\n', outfile);
+                    cg = 0;
+                }
             }
             j += 3;
         }
     }
     else if (d_cmd == 1) {
-        while (j < file_size) {
+        while (j < file_size - 1) {
             for (int p = 0; p < 4; p++) {
-                base64_symbols[p] = original_file[j + p];
+                if (i_cmd == 1) {
+                    int tr = 0;
+                    for (int z = 0; z < 64; z++) {
+                        if (original_file[j + p] == '=') {
+                            tr = 1;
+                            break;
+                        } else if (base64_table[z] == original_file[j + p]) {
+                            tr = 1;
+                            break;
+                        }
+                    }
+                    if (tr == 0) {
+                        j++;
+                        p--;
+                    } else
+                        base64_symbols[p] = original_file[j + p];
+                }
+                else base64_symbols[p] = original_file[j + p];
             }
             int m = 0;
             int break_num = 0;
