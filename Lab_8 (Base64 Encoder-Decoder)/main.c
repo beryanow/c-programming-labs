@@ -147,7 +147,7 @@ void encoding(long int file_size, unsigned char *original_symbols, char *base64_
             fputc(base64_symbols[p], outfile);
             if (f_cmd == 1) {
                 symbols_amount++;
-                if ((symbols_amount == f_cmd_num) && (((p == 3) && (j + 3 < file_size)) | (p != 3))) {
+                if ((symbols_amount == f_cmd_num) && (((p == 3) && (j + 3 < file_size)) || (p != 3))) {
                     fputc('\n', outfile);
                     symbols_amount = 0;
                 }
