@@ -23,22 +23,22 @@ void tree_height_fix(tree_node *p) {
     else p->height = (unsigned char) (right_height + 1);
 }
 
-tree_node *tree_rotate_right(tree_node *p) {
-    tree_node *q = p->left;
-    p->left = q->right;
-    q->right = p;
-    tree_height_fix(p);
-    tree_height_fix(q);
-    return q;
+tree_node *tree_rotate_right(tree_node *original) {
+    tree_node *rotated = original->left;
+    original->left = rotated->right;
+    rotated->right = original;
+    tree_height_fix(original);
+    tree_height_fix(rotated);
+    return rotated;
 }
 
-tree_node *tree_rotate_left(tree_node *q) {
-    tree_node *p = q->right;
-    q->right = p->left;
-    p->left = q;
-    tree_height_fix(q);
-    tree_height_fix(p);
-    return p;
+tree_node *tree_rotate_left(tree_node *original) {
+    tree_node *rotated = original->right;
+    original->right = rotated->left;
+    rotated->left = original;
+    tree_height_fix(original);
+    tree_height_fix(rotated);
+    return rotated;
 }
 
 int tree_balance_factor(tree_node *p) {
@@ -49,12 +49,12 @@ int tree_balance_factor(tree_node *p) {
 tree_node *tree_balance(tree_node *p) {
     tree_height_fix(p);
     if (tree_balance_factor(p) == 2) {
-        if (tree_balance_factor(p->right) == -1)
+        if (tree_balance_factor(p->right) < 0)
             p->right = tree_rotate_right(p->right);
         return tree_rotate_left(p);
     }
     if (tree_balance_factor(p) == -2) {
-        if (tree_balance_factor(p->left) == 1)
+        if (tree_balance_factor(p->left) > 0)
             p->left = tree_rotate_left(p->left);
         return tree_rotate_right(p);
     }
