@@ -43,7 +43,8 @@ void going_through(struct node *p, char *seq, int *j, struct sequence *arr3) {
         seq[*j] = '1';
         (*j)++;
         going_through(p->right, seq, j, arr3);
-    } else {
+    }
+    else {
         for (int v = 0; v < *j; v++) {
             arr3[p->key].cod[v] = seq[v];
         }
@@ -66,7 +67,8 @@ void finding_commands(int *i, int argc, char *argv[], int *c_cmd, int *d_cmd, in
                     *check_fail = 1;
                     break;
             }
-        } else {
+        }
+        else {
             *check_fail = 1;
         }
     }
@@ -74,7 +76,7 @@ void finding_commands(int *i, int argc, char *argv[], int *c_cmd, int *d_cmd, in
 
 int main(int argc, char *argv[]) {
     int arr[256];
-    for (int i; i < 256; i++)
+    for (int i = 0; i < 256; i++)
         arr[i] = 0;
     int i, check_fail = 0;
     int c_cmd, d_cmd;
@@ -83,7 +85,7 @@ int main(int argc, char *argv[]) {
 
         FILE *infile = fopen(argv[i], "rb");
         FILE *outfile = fopen("out.txt", "wb");
-        if ((infile == NULL) || (outfile == NULL)) {
+        if (infile == NULL) {
 
             return 0;
         }
@@ -91,8 +93,8 @@ int main(int argc, char *argv[]) {
         long int file_size = ftell(infile);
         rewind(infile);
         unsigned char *original_file;
-        original_file = (unsigned char *) malloc(sizeof(unsigned char) * file_size);
-        fread(original_file, sizeof(unsigned char), (size_t) file_size, infile);
+        original_file = (unsigned char *)malloc(sizeof(unsigned char)* file_size);
+        fread(original_file, sizeof(unsigned char), (size_t)file_size, infile);
 
         int j = 0, h = 0;
         while (j < file_size) {
@@ -146,13 +148,13 @@ int main(int argc, char *argv[]) {
         }
 
 
-        char *temp_seq = (char *) malloc(sizeof(char) * 8);
+        char *temp_seq = (char *)malloc(sizeof(char)* 8);
         struct sequence *seq = (struct sequence *) calloc(sizeof(struct sequence), 256);
 
         j = 0;
         going_through(trees[0].p, temp_seq, &j, seq);
 
-        char *code = (char *) malloc(sizeof(char) * 8 * file_size);
+        char *code = (char *)malloc(sizeof(char)* 8 * file_size);
         j = 0;
         int b = 0;
         while (j < y) {
@@ -165,6 +167,27 @@ int main(int argc, char *argv[]) {
             j++;
         }
 
+        fwrite(&file_size, sizeof(int), 1, outfile);
+
+        for (int f = 0; f < 256; f++) {
+            if (seq[f].cod[0] != '\0') {
+                int g = 0;
+                int m = f;
+                unsigned char buff = 0;
+                while (m != 0) {
+                    buff = (unsigned char)(((buff << 1) & 254) | ((m % 2 == 1) ? 1 : 0));
+                    m /= 2;
+                }
+                fwrite(&buff, 1, 1, outfile);
+                buff = 0;
+                while (seq[f].cod[g] != '\0') {
+                    buff = (unsigned char)(((buff << 1) & 254) | ((seq[f].cod[g] == '1') ? 1 : 0));
+                    g++;
+                }
+                fwrite(&buff, 1, 1, outfile);
+            }
+        }
+
         j = 0;
         unsigned char buff = 0;
         int buff_size = 0;
@@ -174,12 +197,13 @@ int main(int argc, char *argv[]) {
                 buff_size = 0;
                 buff = 0;
             }
-            buff = (unsigned char) (((buff << 1) & 254) | ((code[j] == '1') ? 1 : 0));
+            buff = (unsigned char)(((buff << 1) & 254) | ((code[j] == '1') ? 1 : 0));
             buff_size++;
             j++;
         }
 
-    } else {
+    }
+    else {
 
     }
     return 0;
