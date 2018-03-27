@@ -10,6 +10,8 @@ struct node {
 
 struct sequence {
     char cod[8];
+    char cod2[8];
+    int otm;
 };
 
 struct nodes_pointers {
@@ -33,28 +35,37 @@ struct node *stick_tree_node(struct node *l, struct node *r, int amount) {
     return new_1;
 }
 
-void going_through(struct node *p, char *seq, int *j, struct sequence *arr3) {
+void going_through(struct node *p, char *seq, char* seq1, int *j, struct sequence *arr3, int* max) {
     if (p->left != NULL) {
         seq[*j] = '0';
+        seq1[*j] = '1';
         (*j)++;
-        going_through(p->left, seq, j, arr3);
+        going_through(p->left, seq, seq1, j, arr3, max);
     }
     if (p->right != NULL) {
         seq[*j] = '1';
+        seq1[*j] = '1';
         (*j)++;
-        going_through(p->right, seq, j, arr3);
+        going_through(p->right, seq, seq1, j, arr3, max);
     }
     else {
+        if (*j > *max) {
+            *max = *j;
+        }
         for (int v = 0; v < *j; v++) {
             arr3[p->key].cod[v] = seq[v];
+            arr3[p->key].cod2[v] = seq1[v];
+            arr3[p->key].otm = 0;
         }
+        arr3[p->key].cod2[*j - 1] = '0';
     }
     seq[*j] = '\0';
+    seq1[*j] = '\0';
     (*j)--;
 }
 
 void finding_commands(int *i, int argc, char *argv[], int *c_cmd, int *d_cmd, int *check_fail) {
-    for (*i = 1; *i < argc - 1; (*i)++) {
+    for (*i = 1; *i < argc - 2; (*i)++) {
         if (argv[*i][0] == '-') {
             switch (argv[*i][1]) {
                 case 'c':
@@ -84,13 +95,13 @@ int main(int argc, char *argv[]) {
     if (c_cmd == 1) {
 
         FILE *infile = fopen(argv[i], "rb");
-        FILE *outfile = fopen("out.txt", "wb");
+        FILE *outfile = fopen(argv[i + 1], "wb");
         if (infile == NULL) {
 
             return 0;
         }
         fseek(infile, 0, SEEK_END);
-        long int file_size = ftell(infile);
+        int file_size = ftell(infile);
         rewind(infile);
         unsigned char *original_file;
         original_file = (unsigned char *)malloc(sizeof(unsigned char)* file_size);
@@ -149,16 +160,43 @@ int main(int argc, char *argv[]) {
 
 
         char *temp_seq = (char *)malloc(sizeof(char)* 8);
+        char *mseq = (char *)malloc(sizeof(char)* 8);
+
         struct sequence *seq = (struct sequence *) calloc(sizeof(struct sequence), 256);
 
         j = 0;
-        going_through(trees[0].p, temp_seq, &j, seq);
+        int max;
+        going_through(trees[0].p, temp_seq, mseq, &j, seq, &max);
 
-        char *code = (char *)malloc(sizeof(char)* 8 * file_size);
+        char *code = (char *)calloc(sizeof(char), max * file_size);
+
         j = 0;
         int b = 0;
-        while (j < y) {
+        fwrite(&file_size, sizeof(int), 1, outfile);
+        fwrite(&y, sizeof(int), 1, outfile);
+        while (j < file_size) {
             int k = 0;
+            if ((seq[original_file[j]].cod2[k] != '\0') && (seq[original_file[j]].otm != 1)) {
+
+                seq[original_file[j]].otm = 1;
+                unsigned char buff = 0;
+                int buff_size = 0;
+                while (seq[original_file[j]].cod2[k] != '\0') {
+                    if (buff_size == 8) {
+                        fwrite(&buff, 1, 1, outfile);
+                        buff_size = 0;
+                    }
+                    buff = (unsigned char) (((buff << 1) & 254) | ((seq[original_file[j]].cod2[k] == '1') ? 1 : 0));
+                    buff_size++;
+                    k++;
+                    if ((seq[original_file[j]].cod2[k] == '\0') && (buff_size > 0)) {
+                        buff = buff << (8 - buff_size);
+                        fwrite(&buff, 1, 1, outfile);
+                    }
+                }
+                fwrite(&original_file[j], sizeof(char), 1, outfile);
+            }
+            k = 0;
             while (seq[original_file[j]].cod[k] != '\0') {
                 code[b] = seq[original_file[j]].cod[k];
                 k++;
@@ -167,26 +205,7 @@ int main(int argc, char *argv[]) {
             j++;
         }
 
-        fwrite(&file_size, sizeof(int), 1, outfile);
 
-        for (int f = 0; f < 256; f++) {
-            if (seq[f].cod[0] != '\0') {
-                int g = 0;
-                int m = f;
-                unsigned char buff = 0;
-                while (m != 0) {
-                    buff = (unsigned char)(((buff << 1) & 254) | ((m % 2 == 1) ? 1 : 0));
-                    m /= 2;
-                }
-                fwrite(&buff, 1, 1, outfile);
-                buff = 0;
-                while (seq[f].cod[g] != '\0') {
-                    buff = (unsigned char)(((buff << 1) & 254) | ((seq[f].cod[g] == '1') ? 1 : 0));
-                    g++;
-                }
-                fwrite(&buff, 1, 1, outfile);
-            }
-        }
 
         j = 0;
         unsigned char buff = 0;
@@ -197,13 +216,18 @@ int main(int argc, char *argv[]) {
                 buff_size = 0;
                 buff = 0;
             }
-            buff = (unsigned char)(((buff << 1) & 254) | ((code[j] == '1') ? 1 : 0));
+            buff = (unsigned char) (((buff << 1) & 254) | ((code[j] == '1') ? 1 : 0));
             buff_size++;
             j++;
+            if ((j == b) && (buff_size > 0)) {
+                fwrite(&buff, 1, 1, outfile);
+            }
         }
 
     }
     else {
+
+
 
     }
     return 0;
