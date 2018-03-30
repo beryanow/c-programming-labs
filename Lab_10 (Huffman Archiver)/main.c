@@ -196,6 +196,10 @@ int main(int argc, char *argv[]) {
         for (i = 0; i < h; i++) {
             trees[i].p = new_tree_node(arr2[i].key, arr2[i].times);
         }
+        if (h == 1) {
+
+        }
+
         while (h != 1) {
             trees[1].p = stick_tree_node(trees[0].p, trees[1].p, trees[0].p->times + trees[1].p->times);
             for (i = 1; i < h; i++)
@@ -220,7 +224,10 @@ int main(int argc, char *argv[]) {
         j = 0;
         int max;
         going_through(trees[0].p, temp_seq, &j, seq, &max);
-
+        if (h == 1) {
+           seq[trees[0].p->key].cod[0] = '1';
+            seq[trees[0].p->key].otm = 0;
+        }
         char *code = (char *)calloc(sizeof(char), max * file_size);
 
         j = 0;
