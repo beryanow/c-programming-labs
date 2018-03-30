@@ -9,8 +9,7 @@ struct node {
 };
 
 struct sequence {
-    char cod[8];
-    char cod2[8];
+    char cod[256];
     int otm;
 };
 
@@ -35,18 +34,16 @@ struct node *stick_tree_node(struct node *l, struct node *r, int amount) {
     return new_1;
 }
 
-void going_through(struct node *p, char *seq, char* seq1, int *j, struct sequence *arr3, int* max) {
+void going_through(struct node *p, char *seq, int *j, struct sequence *arr3, int* max) {
     if (p->left != NULL) {
         seq[*j] = '0';
-        seq1[*j] = '1';
         (*j)++;
-        going_through(p->left, seq, seq1, j, arr3, max);
+        going_through(p->left, seq, j, arr3, max);
     }
     if (p->right != NULL) {
         seq[*j] = '1';
-        seq1[*j] = '1';
         (*j)++;
-        going_through(p->right, seq, seq1, j, arr3, max);
+        going_through(p->right, seq, j, arr3, max);
     }
     else {
         if (*j > *max) {
@@ -54,13 +51,10 @@ void going_through(struct node *p, char *seq, char* seq1, int *j, struct sequenc
         }
         for (int v = 0; v < *j; v++) {
             arr3[p->key].cod[v] = seq[v];
-            arr3[p->key].cod2[v] = seq1[v];
             arr3[p->key].otm = 0;
         }
-        arr3[p->key].cod2[*j - 1] = '0';
     }
     seq[*j] = '\0';
-    seq1[*j] = '\0';
     (*j)--;
 }
 
@@ -83,6 +77,66 @@ void finding_commands(int *i, int argc, char *argv[], int *c_cmd, int *d_cmd, in
             *check_fail = 1;
         }
     }
+}
+
+
+void going_t (struct node* p, unsigned char* ar, int* h, int* gg, char r, int* f, int* d, int* m) {
+    *m = 0;
+    while (*h < *gg) {
+        if ((ar[*f] & (1 << *d)) == 0) {
+            if (p->left == NULL) {
+                p->left = new_tree_node(-1, 0);
+                (*h)++;
+                (*d)--;
+                if (*h / 8 > 0) {
+                    *h = 0;
+                    *gg -= 8;
+                    (*f)++;
+                    (*d) = 7;
+                }
+                going_t(p->left, ar, h, gg, r, f, d, m);
+            }
+            else {
+                (*h)++;
+                (*d)--;
+                if (*h / 8 > 0) {
+                    *h = 0;
+                    *gg -= 8;
+                    (*f)++;
+                    (*d) = 7;
+                }
+                going_t(p->left, ar, h, gg, r, f, d, m);
+            }
+        }
+        else if ((ar[*f] & (1 << *d)) == (1 << *d)) {
+            if (p->right == NULL) {
+                p->right = new_tree_node(-1, 0);
+                (*h)++;
+                (*d)--;
+                if (*h / 8 > 0) {
+                    *h = 0;
+                    *gg -= 8;
+                    (*f)++;
+                    (*d) = 7;
+                }
+                going_t(p->right, ar, h, gg, r, f, d, m);
+            }
+            else {
+                (*h)++;
+                (*d)--;
+                if (*h / 8 > 0) {
+                    *h = 0;
+                    *gg -= 8;
+                    (*f)++;
+                    (*d) = 7;
+                }
+                going_t(p->right, ar, h, gg, r, f, d, m);
+            }
+        }
+        *m = 1;
+    }
+    if (*m == 0)
+        p->key = r;
 }
 
 int main(int argc, char *argv[]) {
@@ -160,41 +214,52 @@ int main(int argc, char *argv[]) {
 
 
         char *temp_seq = (char *)malloc(sizeof(char)* 8);
-        char *mseq = (char *)malloc(sizeof(char)* 8);
 
         struct sequence *seq = (struct sequence *) calloc(sizeof(struct sequence), 256);
 
         j = 0;
         int max;
-        going_through(trees[0].p, temp_seq, mseq, &j, seq, &max);
+        going_through(trees[0].p, temp_seq, &j, seq, &max);
 
         char *code = (char *)calloc(sizeof(char), max * file_size);
 
         j = 0;
         int b = 0;
         fwrite(&file_size, sizeof(int), 1, outfile);
-        fwrite(&y, sizeof(int), 1, outfile);
+        fwrite(&y, sizeof(char), 1, outfile);
         while (j < file_size) {
             int k = 0;
-            if ((seq[original_file[j]].cod2[k] != '\0') && (seq[original_file[j]].otm != 1)) {
+            if ((seq[original_file[j]].cod[k] != '\0') && (seq[original_file[j]].otm != 1)) {
+
+                int t = 0;
+                while (seq[original_file[j]].cod[k] != '\0') {
+                    t++;
+                    k++;
+                }
+
+                fwrite(&original_file[j], sizeof(char), 1, outfile);
+
+                fwrite(&t, sizeof(char), 1, outfile);
 
                 seq[original_file[j]].otm = 1;
                 unsigned char buff = 0;
                 int buff_size = 0;
-                while (seq[original_file[j]].cod2[k] != '\0') {
+                k = 0;
+                while (seq[original_file[j]].cod[k] != '\0') {
+                    t++;
                     if (buff_size == 8) {
                         fwrite(&buff, 1, 1, outfile);
                         buff_size = 0;
                     }
-                    buff = (unsigned char) (((buff << 1) & 254) | ((seq[original_file[j]].cod2[k] == '1') ? 1 : 0));
+                    buff = (unsigned char) (((buff << 1) & 254) | ((seq[original_file[j]].cod[k] == '1') ? 1 : 0));
                     buff_size++;
                     k++;
-                    if ((seq[original_file[j]].cod2[k] == '\0') && (buff_size > 0)) {
+                    if ((seq[original_file[j]].cod[k] == '\0') && (buff_size > 0)) {
                         buff = buff << (8 - buff_size);
                         fwrite(&buff, 1, 1, outfile);
                     }
                 }
-                fwrite(&original_file[j], sizeof(char), 1, outfile);
+
             }
             k = 0;
             while (seq[original_file[j]].cod[k] != '\0') {
@@ -220,6 +285,7 @@ int main(int argc, char *argv[]) {
             buff_size++;
             j++;
             if ((j == b) && (buff_size > 0)) {
+                buff = buff << (8 - buff_size);
                 fwrite(&buff, 1, 1, outfile);
             }
         }
@@ -227,8 +293,74 @@ int main(int argc, char *argv[]) {
     }
     else {
 
+        FILE *infile = fopen(argv[i], "rb");
+        FILE *outfile = fopen(argv[i + 1], "wb");
+        if (infile == NULL) {
+
+            return 0;
+        }
+        fseek(infile, 0, SEEK_END);
+        int file_size = ftell(infile);
 
 
+        char* arr = (char*)calloc(sizeof(char), 33);
+        int h = 0;
+        unsigned char* f = (unsigned char*)malloc(sizeof(char) * file_size);
+        rewind(infile);
+
+        h = 0;
+
+        int r1 = 0;
+        int r2 = 0;
+        fread(&r1, sizeof(int), 1, infile);
+        fread(&r2, sizeof(char), 1, infile);
+        struct node *arr2 = (struct node *) malloc(sizeof(struct node));
+        arr2 = new_tree_node(-1, 0);
+        for (int y = 0; y < r2; y++) {
+            char ch;
+            fread(&ch, sizeof(char), 1, infile);
+            int gg = 0;
+            fread(&gg, sizeof(char), 1, infile);
+            unsigned char* arr1 = (unsigned char*)calloc(sizeof(unsigned char), gg / 9 + 1);
+            fread(arr1, sizeof(char), gg / 9 + 1, infile);
+
+            h = 0;
+            int f = 0;
+            int d = 7;
+            int m;
+            going_t(arr2, arr1, &h, &gg, ch, &f, &d, &m);
+        }
+        struct node* start = arr2;
+        unsigned char* arr3 = (unsigned char*)malloc(sizeof(unsigned char) * file_size);
+        int p = 0;
+        struct node* current = start;
+        while (p < r1) {
+            char ch;
+            fread(&ch, sizeof(char), 1, infile);
+            for (int x = 7; x >= 0; x--) {
+                if ((ch & (1 << x)) == 0) {
+                    current = current->left;
+                    if ((current->key) != -1) {
+                        fputc(current->key, outfile);
+                        current = start;
+                        p++;
+                        if (p == r1)
+                            break;
+                    }
+                }
+                else {
+                    current = current->right;
+                    if ((current->key) != -1) {
+                        fputc(current->key, outfile);
+                        current = start;
+                        p++;
+                        if (p == r1)
+                            break;
+                    }
+                }
+            }
+        }
     }
     return 0;
 }
+
