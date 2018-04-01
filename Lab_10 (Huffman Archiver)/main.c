@@ -1,6 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+void print_help() {
+    printf("USAGE:\n [for decoding]: -d inputfilename outputfilename \n "
+                   "[for encoding]: -c inputfilename outputfrilename \n "
+                   "(!) inputfilename must not be empty");
+}
+
 struct node {
     int key;
     int times;
@@ -19,33 +25,37 @@ struct nodes_pointers {
 
 struct node *new_tree_node(int key, int amount) {
     struct node *new_1 = (struct node *) malloc(sizeof(struct node));
+
     new_1->key = key;
     new_1->times = amount;
     new_1->left = NULL;
     new_1->right = NULL;
+
     return new_1;
 }
 
 struct node *stick_tree_node(struct node *l, struct node *r, int amount) {
     struct node *new_1 = (struct node *) malloc(sizeof(struct node));
+
     new_1->times = amount;
     new_1->left = l;
     new_1->right = r;
+
     return new_1;
 }
 
-void going_through(struct node *p, char *seq, int *j, struct sequence *arr3, int* max) {
+void encoding_symbols(struct node *p, char *seq, int *j, struct sequence *arr3, int *max) {
     if (p->left != NULL) {
         seq[*j] = '0';
         (*j)++;
-        going_through(p->left, seq, j, arr3, max);
+        encoding_symbols(p->left, seq, j, arr3, max);
     }
+
     if (p->right != NULL) {
         seq[*j] = '1';
         (*j)++;
-        going_through(p->right, seq, j, arr3, max);
-    }
-    else {
+        encoding_symbols(p->right, seq, j, arr3, max);
+    } else {
         if (*j > *max) {
             *max = *j;
         }
@@ -58,10 +68,10 @@ void going_through(struct node *p, char *seq, int *j, struct sequence *arr3, int
     (*j)--;
 }
 
-void finding_commands(int *i, int argc, char *argv[], int *c_cmd, int *d_cmd, int *check_fail) {
-    for (*i = 1; *i < argc - 2; (*i)++) {
-        if (argv[*i][0] == '-') {
-            switch (argv[*i][1]) {
+void finding_commands(int argc, char *argv[], int *c_cmd, int *d_cmd, int *check_fail) {
+    for (int i = 1; i < argc - 2; i++) {
+        if (argv[i][0] == '-') {
+            switch (argv[i][1]) {
                 case 'c':
                     *c_cmd = 1;
                     break;
@@ -72,65 +82,43 @@ void finding_commands(int *i, int argc, char *argv[], int *c_cmd, int *d_cmd, in
                     *check_fail = 1;
                     break;
             }
-        }
-        else {
+        } else {
             *check_fail = 1;
         }
     }
 }
 
+void correcting_bytes(int *h, int *d, int *code_length, int *f) {
+    (*h)++;
+    (*d)--;
+    if (*h / 8 > 0) {
+        *h = 0;
+        *code_length -= 8;
+        (*f)++;
+        (*d) = 7;
+    }
+}
 
-void going_t (struct node* p, unsigned char* ar, int* h, int* gg, unsigned char r, int* f, int* d, int* m) {
+void restoring_tree(struct node *p, unsigned char *ar, int *h, int *code_length, unsigned char r, int *f, int *d, int *m) {
     *m = 0;
-    while (*h < *gg) {
+    while (*h < *code_length) {
         if ((ar[*f] & (1 << *d)) == 0) {
             if (p->left == NULL) {
                 p->left = new_tree_node(-2, 0);
-                (*h)++;
-                (*d)--;
-                if (*h / 8 > 0) {
-                    *h = 0;
-                    *gg -= 8;
-                    (*f)++;
-                    (*d) = 7;
-                }
-                going_t(p->left, ar, h, gg, r, f, d, m);
+                correcting_bytes(h, d, code_length, f);
+                restoring_tree(p->left, ar, h, code_length, r, f, d, m);
+            } else {
+                correcting_bytes(h, d, code_length, f);
+                restoring_tree(p->left, ar, h, code_length, r, f, d, m);
             }
-            else {
-                (*h)++;
-                (*d)--;
-                if (*h / 8 > 0) {
-                    *h = 0;
-                    *gg -= 8;
-                    (*f)++;
-                    (*d) = 7;
-                }
-                going_t(p->left, ar, h, gg, r, f, d, m);
-            }
-        }
-        else if ((ar[*f] & (1 << *d)) == (1 << *d)) {
+        } else if ((ar[*f] & (1 << *d)) == (1 << *d)) {
             if (p->right == NULL) {
                 p->right = new_tree_node(-2, 0);
-                (*h)++;
-                (*d)--;
-                if (*h / 8 > 0) {
-                    *h = 0;
-                    *gg -= 8;
-                    (*f)++;
-                    (*d) = 7;
-                }
-                going_t(p->right, ar, h, gg, r, f, d, m);
-            }
-            else {
-                (*h)++;
-                (*d)--;
-                if (*h / 8 > 0) {
-                    *h = 0;
-                    *gg -= 8;
-                    (*f)++;
-                    (*d) = 7;
-                }
-                going_t(p->right, ar, h, gg, r, f, d, m);
+                correcting_bytes(h, d, code_length, f);
+                restoring_tree(p->right, ar, h, code_length, r, f, d, m);
+            } else {
+                correcting_bytes(h, d, code_length, f);
+                restoring_tree(p->right, ar, h, code_length, r, f, d, m);
             }
         }
         *m = 1;
@@ -139,27 +127,100 @@ void going_t (struct node* p, unsigned char* ar, int* h, int* gg, unsigned char 
         p->key = r;
 }
 
-int main(int argc, char *argv[]) {
+struct nodes_pointers *connecting_nodes(int h, struct node *initial_nodes) {
+    struct nodes_pointers *set_tree = (struct nodes_pointers *) malloc(sizeof(struct nodes_pointers) * h);
+
+    for (int i = 0; i < h; i++) {
+        set_tree[i].p = new_tree_node(initial_nodes[i].key, initial_nodes[i].times);
+    }
+
+    while (h != 1) {
+        set_tree[1].p = stick_tree_node(set_tree[0].p, set_tree[1].p, set_tree[0].p->times + set_tree[1].p->times);
+        for (int i = 1; i < h; i++)
+            set_tree[i - 1] = set_tree[i];
+        h--;
+        for (int i = 0; i < h - 1; i++) {
+            for (int k = i + 1; k < h; k++) {
+                if (set_tree[i].p->times > set_tree[k].p->times) {
+                    struct node *temp = set_tree[i].p;
+                    set_tree[i].p = set_tree[k].p;
+                    set_tree[k].p = temp;
+                }
+            }
+        }
+    }
+
+    return set_tree;
+}
+
+void printing_sym_code(struct sequence *sym_codes, const unsigned char *original_file, int j, FILE *outfile) {
+    unsigned char buff = 0;
+    int buff_size = 0;
+    int k = 0;
+    while (sym_codes[original_file[j]].cod[k] != '\0') {
+        if (buff_size == 8) {
+            fwrite(&buff, 1, 1, outfile);
+            buff_size = 0;
+            buff = 0;
+        }
+
+        buff = (unsigned char) (((buff << 1) & 254) | ((sym_codes[original_file[j]].cod[k] == '1') ? 1 : 0));
+        buff_size++;
+        k++;
+
+        if ((sym_codes[original_file[j]].cod[k] == '\0') && (buff_size > 0)) {
+            buff = buff << (8 - buff_size);
+            fwrite(&buff, 1, 1, outfile);
+        }
+    }
+}
+
+void printing_encoded_sequence(int b, const char *code, FILE *outfile) {
+    int j = 0;
+    unsigned char buff = 0;
+    int buff_size = 0;
+
+    while (j < b) {
+        if (buff_size == 8) {
+            fwrite(&buff, 1, 1, outfile);
+            buff_size = 0;
+            buff = 0;
+        }
+
+        buff = (unsigned char) (((buff << 1) & 254) | ((code[j] == '1') ? 1 : 0));
+        buff_size++;
+        j++;
+
+        if ((j == b) && (buff_size > 0)) {
+            buff = buff << (8 - buff_size);
+            fwrite(&buff, 1, 1, outfile);
+        }
+    }
+}
+
+void encoding(char *argv[]) {
     int arr[256];
     for (int i = 0; i < 256; i++)
         arr[i] = 0;
-    int i, check_fail = 0;
-    int c_cmd, d_cmd;
-    finding_commands(&i, argc, argv, &c_cmd, &d_cmd, &check_fail);
-    if (c_cmd == 1) {
 
-        FILE *infile = fopen(argv[i], "rb");
-        FILE *outfile = fopen(argv[i + 1], "wb");
-        if (infile == NULL) {
+    int i = 2;
+    int check_fail = 0;
 
-            return 0;
-        }
+    FILE *infile = fopen(argv[i], "rb");
+    FILE *outfile = fopen(argv[i + 1], "wb");
+    if (infile == NULL) {
+        print_help();
+        check_fail = 1;
+    }
+
+    if (check_fail == 0) {
         fseek(infile, 0, SEEK_END);
-        int file_size = ftell(infile);
+        long file_size = ftell(infile);
         rewind(infile);
+
         unsigned char *original_file;
-        original_file = (unsigned char *)malloc(sizeof(unsigned char)* file_size);
-        fread(original_file, sizeof(unsigned char), (size_t)file_size, infile);
+        original_file = (unsigned char *) malloc(sizeof(unsigned char) * file_size);
+        fread(original_file, sizeof(unsigned char), (size_t) file_size, infile);
 
         int j = 0;
         int h = 0;
@@ -170,110 +231,74 @@ int main(int argc, char *argv[]) {
             j++;
         }
 
-        int y = h;
-        struct node *arr2 = (struct node *) malloc(sizeof(struct node) * h);
+        int y = h; // amount of coded symbols of each kind
 
+        struct node *initial_nodes = (struct node *) malloc(sizeof(struct node) * h);
 
         j = 0;
         for (i = 0; i < 256; i++) {
             if (arr[i] > 0) {
-                arr2[j].key = i;
-                arr2[j].times = arr[i];
+                initial_nodes[j].key = i;
+                initial_nodes[j].times = arr[i];
                 j++;
             }
         }
 
         for (i = 0; i < h - 1; i++) {
             for (int k = i + 1; k < h; k++) {
-                if (arr2[i].times > arr2[k].times) {
-                    struct node temp = arr2[i];
-                    arr2[i] = arr2[k];
-                    arr2[k] = temp;
+                if (initial_nodes[i].times > initial_nodes[k].times) {
+                    struct node temp = initial_nodes[i];
+                    initial_nodes[i] = initial_nodes[k];
+                    initial_nodes[k] = temp;
                 }
             }
         }
 
-        struct nodes_pointers *trees = (struct nodes_pointers *) malloc(sizeof(struct nodes_pointers) * h);
-        for (i = 0; i < h; i++) {
-            trees[i].p = new_tree_node(arr2[i].key, arr2[i].times);
-        }
-        int f = h;
+        struct nodes_pointers *set_tree = connecting_nodes(h, initial_nodes);
 
-        while (h != 1) {
-            trees[1].p = stick_tree_node(trees[0].p, trees[1].p, trees[0].p->times + trees[1].p->times);
-            for (i = 1; i < h; i++)
-                trees[i - 1] = trees[i];
-            h--;
-            for (i = 0; i < h - 1; i++) {
-                for (int k = i + 1; k < h; k++) {
-                    if (trees[i].p->times > trees[k].p->times) {
-                        struct node *temp = trees[i].p;
-                        trees[i].p = trees[k].p;
-                        trees[k].p = temp;
-                    }
-                }
-            }
-        }
+        char *temp_seq = (char *) malloc(sizeof(char) * 8);
 
+        struct sequence *sym_codes = (struct sequence *) calloc(sizeof(struct sequence), 256);
 
-        char *temp_seq = (char *)malloc(sizeof(char)* 8);
-
-        struct sequence *seq = (struct sequence *) calloc(sizeof(struct sequence), 256);
-
-        j = 0;
         int max;
-        going_through(trees[0].p, temp_seq, &j, seq, &max);
-        if (f == 1) {
-            seq[trees[0].p->key].cod[0] = '1';
-            seq[trees[0].p->key].otm = 0;
-        }
-        char *code = (char *)calloc(sizeof(char), max * file_size);
-
         j = 0;
 
-        int b = 0;
+        encoding_symbols(set_tree[0].p, temp_seq, &j, sym_codes, &max);
+
+        if (y == 1) {
+            sym_codes[set_tree[0].p->key].cod[0] = '1';
+            sym_codes[set_tree[0].p->key].otm = 0;
+        }
+        char *code = (char *) calloc(sizeof(char), (size_t) max * file_size);
 
         fwrite(&file_size, sizeof(int), 1, outfile);
         fwrite(&y, sizeof(int), 1, outfile);
 
-        while (j < file_size) {
-            int k = 0;
-            if ((seq[original_file[j]].cod[k] != '\0') && (seq[original_file[j]].otm != 1)) {
+        int b = 0; // used for following the encoded sequence's length
+        j = 0;
 
-                int t = 0;
-                while (seq[original_file[j]].cod[k] != '\0') {
+        while (j < file_size) {
+            int k = 0; // used for following the symbol code's length
+
+            if ((sym_codes[original_file[j]].cod[k] != '\0') && (sym_codes[original_file[j]].otm != 1)) {
+
+                int t = 0; // symbol code's length
+                while (sym_codes[original_file[j]].cod[k] != '\0') {
                     t++;
                     k++;
                 }
 
                 fwrite(&original_file[j], sizeof(char), 1, outfile);
-
                 fwrite(&t, sizeof(char), 1, outfile);
 
-                seq[original_file[j]].otm = 1;
-                unsigned char buff = 0;
-                int buff_size = 0;
-                k = 0;
-                while (seq[original_file[j]].cod[k] != '\0') {
-                    t++;
-                    if (buff_size == 8) {
-                        fwrite(&buff, 1, 1, outfile);
-                        buff_size = 0;
-                        buff = 0;
-                    }
-                    buff = (unsigned char) (((buff << 1) & 254) | ((seq[original_file[j]].cod[k] == '1') ? 1 : 0));
-                    buff_size++;
-                    k++;
-                    if ((seq[original_file[j]].cod[k] == '\0') && (buff_size > 0)) {
-                        buff = buff << (8 - buff_size);
-                        fwrite(&buff, 1, 1, outfile);
-                    }
-                }
+                sym_codes[original_file[j]].otm = 1;
 
+                printing_sym_code(sym_codes, original_file, j, outfile);
             }
+
             k = 0;
-            while (seq[original_file[j]].cod[k] != '\0') {
-                code[b] = seq[original_file[j]].cod[k];
+            while (sym_codes[original_file[j]].cod[k] != '\0') {
+                code[b] = sym_codes[original_file[j]].cod[k];
                 k++;
                 b++;
             }
@@ -281,97 +306,99 @@ int main(int argc, char *argv[]) {
             j++;
         }
 
-
-
-        j = 0;
-        unsigned char buff = 0;
-        int buff_size = 0;
-        while (j < b) {
-            if (buff_size == 8) {
-                fwrite(&buff, 1, 1, outfile);
-                buff_size = 0;
-                buff = 0;
-            }
-            buff = (unsigned char) (((buff << 1) & 254) | ((code[j] == '1') ? 1 : 0));
-            buff_size++;
-            j++;
-            if ((j == b) && (buff_size > 0)) {
-                buff = buff << (8 - buff_size);
-                fwrite(&buff, 1, 1, outfile);
-            }
-        }
-
+        printing_encoded_sequence(b, code, outfile);
     }
-    else {
+}
 
-        FILE *infile = fopen(argv[i], "rb");
-        FILE *outfile = fopen(argv[i + 1], "wb");
-        if (infile == NULL) {
+void decoding(char *argv[]) {
 
-            return 0;
+    int i = 2;
+    FILE *infile = fopen(argv[i], "rb");
+    FILE *outfile = fopen(argv[i + 1], "wb");
+
+    int check_fail = 0;
+
+    if (infile == NULL) {
+        print_help();
+        check_fail = 1;
+    }
+
+    if (check_fail == 0) {
+        int orig_f_size = 0;
+        int coded_sym_amount = 0;
+        fread(&orig_f_size, sizeof(int), 1, infile);
+        fread(&coded_sym_amount, sizeof(int), 1, infile);
+
+        struct node *final_tree = new_tree_node(-2, 0);
+
+        for (int y = 0; y < coded_sym_amount; y++) {
+            unsigned char sym;
+            fread(&sym, sizeof(char), 1, infile);
+
+            int code_length = 0;
+            fread(&code_length, sizeof(char), 1, infile);
+
+            unsigned char *code_sequence = (unsigned char *) calloc(sizeof(unsigned char),
+                                                                    (size_t) code_length / 9 + 1);
+            fread(code_sequence, sizeof(char), (size_t) code_length / 9 + 1, infile);
+
+            int h = 0; // used for following code_length
+            int f = 0; // used for following needed amount of the coded symbol's bytes
+            int d = 7; // used for observing the bit required
+            int check; // used for monitoring whether the symbol has been already placed into the tree
+
+            restoring_tree(final_tree, code_sequence, &h, &code_length, sym, &f, &d, &check);
         }
-        fseek(infile, 0, SEEK_END);
-        int file_size = ftell(infile);
 
+        struct node *start_node = final_tree;
+        struct node *current_node = start_node;
 
-        char* arr = (char*)calloc(sizeof(char), 33);
-        int h = 0;
-        unsigned char* f = (unsigned char*)malloc(sizeof(char) * file_size);
-        rewind(infile);
+        int p = 0; // used for following the number of original file's symbols
 
-        h = 0;
+        while (p < orig_f_size) {
+            char sym;
+            fread(&sym, sizeof(char), 1, infile);
 
-        int r1 = 0;
-        int r2 = 0;
-        fread(&r1, sizeof(int), 1, infile);
-        fread(&r2, sizeof(int), 1, infile);
-        struct node *arr2 = (struct node *) malloc(sizeof(struct node));
-        arr2 = new_tree_node(-2, 0);
-        for (int y = 0; y < r2; y++) {
-            unsigned char ch;
-            fread(&ch, sizeof(char), 1, infile);
-            int gg = 0;
-            fread(&gg, sizeof(char), 1, infile);
-            unsigned char* arr1 = (unsigned char*)calloc(sizeof(unsigned char), gg / 9 + 1);
-            fread(arr1, sizeof(char), gg / 9 + 1, infile);
-
-            h = 0;
-            int f = 0;
-            int d = 7;
-            int m;
-            going_t(arr2, arr1, &h, &gg, ch, &f, &d, &m);
-        }
-        struct node* start = arr2;
-        unsigned char* arr3 = (unsigned char*)malloc(sizeof(unsigned char) * file_size);
-        int p = 0;
-        struct node* current = start;
-        while (p < r1) {
-            char ch;
-            fread(&ch, sizeof(char), 1, infile);
             for (int x = 7; x >= 0; x--) {
-                if ((ch & (1 << x)) == 0) {
-                    current = current->left;
-                    if ((current->key) != -2) {
-                        fputc(current->key, outfile);
-                        current = start;
+                if ((sym & (1 << x)) == 0) {
+                    current_node = current_node->left;
+                    if ((current_node->key) != -2) {
+                        fputc(current_node->key, outfile);
+                        current_node = start_node;
                         p++;
-                        if (p == r1)
+                        if (p == orig_f_size)
                             break;
                     }
-                }
-                else {
-                    current = current->right;
-                    if ((current->key) != -2) {
-                        fputc(current->key, outfile);
-                        current = start;
+                } else {
+                    current_node = current_node->right;
+                    if ((current_node->key) != -2) {
+                        fputc(current_node->key, outfile);
+                        current_node = start_node;
                         p++;
-                        if (p == r1)
+                        if (p == orig_f_size)
                             break;
                     }
                 }
             }
         }
     }
+}
+
+int main(int argc, char *argv[]) {
+
+    int check_fail = 0;
+    int c_cmd, d_cmd;
+
+    finding_commands(argc, argv, &c_cmd, &d_cmd, &check_fail);
+
+    if (check_fail == 0) {
+        if (c_cmd == 1)
+            encoding(argv);
+        else
+            decoding(argv);
+    } else
+        print_help();
+
     return 0;
 }
 
