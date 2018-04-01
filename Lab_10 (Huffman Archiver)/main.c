@@ -85,7 +85,7 @@ void going_t (struct node* p, unsigned char* ar, int* h, int* gg, char r, int* f
     while (*h < *gg) {
         if ((ar[*f] & (1 << *d)) == 0) {
             if (p->left == NULL) {
-                p->left = new_tree_node(-1, 0);
+                p->left = new_tree_node(-2, 0);
                 (*h)++;
                 (*d)--;
                 if (*h / 8 > 0) {
@@ -110,7 +110,7 @@ void going_t (struct node* p, unsigned char* ar, int* h, int* gg, char r, int* f
         }
         else if ((ar[*f] & (1 << *d)) == (1 << *d)) {
             if (p->right == NULL) {
-                p->right = new_tree_node(-1, 0);
+                p->right = new_tree_node(-2, 0);
                 (*h)++;
                 (*d)--;
                 if (*h / 8 > 0) {
@@ -196,9 +196,7 @@ int main(int argc, char *argv[]) {
         for (i = 0; i < h; i++) {
             trees[i].p = new_tree_node(arr2[i].key, arr2[i].times);
         }
-        if (h == 1) {
-
-        }
+        int f = h;
 
         while (h != 1) {
             trees[1].p = stick_tree_node(trees[0].p, trees[1].p, trees[0].p->times + trees[1].p->times);
@@ -224,8 +222,8 @@ int main(int argc, char *argv[]) {
         j = 0;
         int max;
         going_through(trees[0].p, temp_seq, &j, seq, &max);
-        if (h == 1) {
-           seq[trees[0].p->key].cod[0] = '1';
+        if (f == 1) {
+            seq[trees[0].p->key].cod[0] = '1';
             seq[trees[0].p->key].otm = 0;
         }
         char *code = (char *)calloc(sizeof(char), max * file_size);
@@ -233,7 +231,7 @@ int main(int argc, char *argv[]) {
         j = 0;
         int b = 0;
         fwrite(&file_size, sizeof(int), 1, outfile);
-        fwrite(&y, sizeof(char), 1, outfile);
+        fwrite(&y, sizeof(unsigned char), 1, outfile);
         while (j < file_size) {
             int k = 0;
             if ((seq[original_file[j]].cod[k] != '\0') && (seq[original_file[j]].otm != 1)) {
@@ -257,6 +255,7 @@ int main(int argc, char *argv[]) {
                     if (buff_size == 8) {
                         fwrite(&buff, 1, 1, outfile);
                         buff_size = 0;
+                        buff = 0;
                     }
                     buff = (unsigned char) (((buff << 1) & 254) | ((seq[original_file[j]].cod[k] == '1') ? 1 : 0));
                     buff_size++;
@@ -274,6 +273,7 @@ int main(int argc, char *argv[]) {
                 k++;
                 b++;
             }
+
             j++;
         }
 
@@ -322,7 +322,7 @@ int main(int argc, char *argv[]) {
         fread(&r1, sizeof(int), 1, infile);
         fread(&r2, sizeof(char), 1, infile);
         struct node *arr2 = (struct node *) malloc(sizeof(struct node));
-        arr2 = new_tree_node(-1, 0);
+        arr2 = new_tree_node(-2, 0);
         for (int y = 0; y < r2; y++) {
             char ch;
             fread(&ch, sizeof(char), 1, infile);
@@ -347,7 +347,7 @@ int main(int argc, char *argv[]) {
             for (int x = 7; x >= 0; x--) {
                 if ((ch & (1 << x)) == 0) {
                     current = current->left;
-                    if ((current->key) != -1) {
+                    if ((current->key) != -2) {
                         fputc(current->key, outfile);
                         current = start;
                         p++;
@@ -357,7 +357,7 @@ int main(int argc, char *argv[]) {
                 }
                 else {
                     current = current->right;
-                    if ((current->key) != -1) {
+                    if ((current->key) != -2) {
                         fputc(current->key, outfile);
                         current = start;
                         p++;
