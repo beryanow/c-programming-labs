@@ -80,7 +80,7 @@ void finding_commands(int *i, int argc, char *argv[], int *c_cmd, int *d_cmd, in
 }
 
 
-void going_t (struct node* p, unsigned char* ar, int* h, int* gg, char r, int* f, int* d, int* m) {
+void going_t (struct node* p, unsigned char* ar, int* h, int* gg, unsigned char r, int* f, int* d, int* m) {
     *m = 0;
     while (*h < *gg) {
         if ((ar[*f] & (1 << *d)) == 0) {
@@ -161,7 +161,8 @@ int main(int argc, char *argv[]) {
         original_file = (unsigned char *)malloc(sizeof(unsigned char)* file_size);
         fread(original_file, sizeof(unsigned char), (size_t)file_size, infile);
 
-        int j = 0, h = 0;
+        int j = 0;
+        int h = 0;
         while (j < file_size) {
             if (arr[original_file[j]] == 0)
                 h++;
@@ -229,9 +230,12 @@ int main(int argc, char *argv[]) {
         char *code = (char *)calloc(sizeof(char), max * file_size);
 
         j = 0;
+
         int b = 0;
+
         fwrite(&file_size, sizeof(int), 1, outfile);
-        fwrite(&y, sizeof(unsigned char), 1, outfile);
+        fwrite(&y, sizeof(int), 1, outfile);
+
         while (j < file_size) {
             int k = 0;
             if ((seq[original_file[j]].cod[k] != '\0') && (seq[original_file[j]].otm != 1)) {
@@ -320,11 +324,11 @@ int main(int argc, char *argv[]) {
         int r1 = 0;
         int r2 = 0;
         fread(&r1, sizeof(int), 1, infile);
-        fread(&r2, sizeof(char), 1, infile);
+        fread(&r2, sizeof(int), 1, infile);
         struct node *arr2 = (struct node *) malloc(sizeof(struct node));
         arr2 = new_tree_node(-2, 0);
         for (int y = 0; y < r2; y++) {
-            char ch;
+            unsigned char ch;
             fread(&ch, sizeof(char), 1, infile);
             int gg = 0;
             fread(&gg, sizeof(char), 1, infile);
