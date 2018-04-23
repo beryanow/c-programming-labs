@@ -1,5 +1,5 @@
 DESCRIPTION:
-Find minimal spanning tree. Prim's Algorithm.
+Find minimal spanning tree. Kruskal's Algorithm.
 
 INPUT:
 String #1: an integer number N [0..5000] - a number of vertices in the graph.

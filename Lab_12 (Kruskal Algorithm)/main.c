@@ -92,7 +92,7 @@ void checking_past_edges(int *fin, int *fin1, int *g, s_compose *arr, int t, int
     }
 }
 
-void prim_alg_implementation(s_compose *arr, int t) {
+void kruskal_alg_implementation(s_compose *arr, int t) {
     int *fin = (int *) calloc(sizeof(int), t);
     int *fin1 = (int *) calloc(sizeof(int), t);
 
@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
     if (mistake)
         return 0;
 
-    prim_alg_implementation(arr, vert_amount);
+    kruskal_alg_implementation(arr, vert_amount);
 
     if (vert_amount == 1)
         printf("no spanning tree\n");
