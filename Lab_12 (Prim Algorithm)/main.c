@@ -18,7 +18,6 @@ void marking_as_read(int t, s_compose *arr, int *fin1, int y, int y2, int c) {
 }
 
 s_compose *sorting_edges(FILE *infile, int *t, int *mistake) {
-
     int N, M;
     fscanf(infile, "%d %d", &N, &M);
     int start, end, len;
@@ -73,7 +72,6 @@ s_compose *sorting_edges(FILE *infile, int *t, int *mistake) {
             }
         }
     }
-
     return arr;
 }
 
@@ -188,5 +186,6 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < vert_amount; i++) {
             if (arr[i].val == 1) printf("%d %d\n", arr[i].start, arr[i].end);
         }
+    
     return 0;
 }
