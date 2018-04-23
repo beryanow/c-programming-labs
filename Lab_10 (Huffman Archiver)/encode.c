@@ -29,15 +29,18 @@ void encoding(char *argv[]) {
         int j = 0;
         int h = 0;
         while (j < file_size) {
-            if (arr[original_file[j]] == 0)
-                h++;
             arr[original_file[j]]++;
             j++;
         }
 
+        for (int w = 0; w < 256; w++) {
+            if (arr[w] != 0)
+                h++;
+        }
+
         int y = h; // amount of coded symbols of each kind
 
-        struct node *initial_nodes = (struct node *) malloc(sizeof(struct node) * h);
+        s_node *initial_nodes = (s_node *) malloc(sizeof(s_node) * h);
 
         j = 0;
         for (i = 0; i < 256; i++) {
@@ -48,17 +51,11 @@ void encoding(char *argv[]) {
             }
         }
 
-        for (i = 0; i < h - 1; i++) {
-            for (int k = i + 1; k < h; k++) {
-                if (initial_nodes[i].times > initial_nodes[k].times) {
-                    struct node temp = initial_nodes[i];
-                    initial_nodes[i] = initial_nodes[k];
-                    initial_nodes[k] = temp;
-                }
-            }
-        }
+        int *times_arr = (int *) malloc(sizeof(int) * 256);
 
-        struct nodes_pointers *set_tree = connecting_nodes(h, initial_nodes);
+        qsort_implementation(times_arr, h, initial_nodes);
+
+        s_node **set_tree = (s_node **) connecting_nodes(h, initial_nodes);
 
         char *temp_seq = (char *) malloc(sizeof(char) * 8);
 
@@ -67,11 +64,11 @@ void encoding(char *argv[]) {
         int max;
         j = 0;
 
-        encoding_symbols(set_tree[0].p, temp_seq, &j, sym_codes, &max);
+        encoding_symbols(set_tree[0], temp_seq, &j, sym_codes, &max);
 
         if (y == 1) {
-            sym_codes[set_tree[0].p->key].cod[0] = '1';
-            sym_codes[set_tree[0].p->key].otm = 0;
+            sym_codes[set_tree[0]->key].cod[0] = '1';
+            sym_codes[set_tree[0]->key].otm = 0;
         }
         char *code = (char *) calloc(sizeof(char), (size_t) max * file_size);
 
@@ -113,4 +110,3 @@ void encoding(char *argv[]) {
         printing_encoded_sequence(b, code, outfile);
     }
 }
-

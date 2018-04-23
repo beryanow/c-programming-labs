@@ -21,7 +21,7 @@ void decoding(char *argv[]) {
         fread(&orig_f_size, sizeof(int), 1, infile);
         fread(&coded_sym_amount, sizeof(int), 1, infile);
 
-        struct node *final_tree = new_tree_node(-2, 0);
+        s_node *final_tree = new_tree_node(-2, 0);
 
         for (int y = 0; y < coded_sym_amount; y++) {
             unsigned char sym;
@@ -30,8 +30,7 @@ void decoding(char *argv[]) {
             int code_length = 0;
             fread(&code_length, sizeof(char), 1, infile);
 
-            unsigned char *code_sequence = (unsigned char *) calloc(sizeof(unsigned char),
-                                                                    (size_t) code_length / 9 + 1);
+            unsigned char *code_sequence = (unsigned char *) calloc(sizeof(unsigned char), (size_t) code_length / 9 + 1);
             fread(code_sequence, sizeof(char), (size_t) code_length / 9 + 1, infile);
 
             int h = 0; // used for following code_length
@@ -42,8 +41,8 @@ void decoding(char *argv[]) {
             restoring_tree(final_tree, code_sequence, &h, &code_length, sym, &f, &d, &check);
         }
 
-        struct node *start_node = final_tree;
-        struct node *current_node = start_node;
+        s_node *start_node = final_tree;
+        s_node *current_node = start_node;
 
         int p = 0; // used for following the number of original file's symbols
 
