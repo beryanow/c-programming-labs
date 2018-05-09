@@ -2,95 +2,127 @@
 #include <stdlib.h>
 #include "functions.h"
 
-void encoding(char *argv[]) {
-    int arr[256];
-    for (int i = 0; i < 256; i++)
-        arr[i] = 0;
-    int i = 2;
-    int check_fail = 0;
+#define STEP 1024
 
-    FILE *infile = fopen(argv[i], "rb");
-    FILE *outfile = fopen(argv[i + 1], "wb");
+void encoding (char* argv[]) {
+    int l = 2;
 
-    if (infile == NULL) {
-        print_help();
-        check_fail = 1;
-    }
+    FILE *infile = fopen(argv[l], "rb");
+    FILE *outfile = fopen(argv[l + 1], "wb");
 
-    if (check_fail == 0) {
-        fseek(infile, 0, SEEK_END);
-        long file_size = ftell(infile);
-        rewind(infile);
+    fseek(infile, 0, SEEK_END);
+    long temp_file_size = ftell(infile);
+    long file_size = temp_file_size;
+    rewind(infile);
 
+    if (file_size != 0) {
         unsigned char *original_file;
         original_file = (unsigned char *) malloc(sizeof(unsigned char) * file_size);
-        fread(original_file, sizeof(unsigned char), (size_t) file_size, infile);
 
-        int j = 0;
-        int h = 0;
-
-        while (j < file_size) {
-            arr[original_file[j]]++;
-            j++;
-        }
-        for (int w = 0; w < 256; w++) {
-            if (arr[w] != 0)
-                h++;
-        }
-        int y = h; // amount of coded symbols of each kind
-
-        s_node *initial_nodes = (s_node *) malloc(sizeof(s_node) * h);
-
-        j = 0;
-        for (i = 0; i < 256; i++) {
-            if (arr[i] > 0) {
-                initial_nodes[j].key = i;
-                initial_nodes[j].times = arr[i];
-                j++;
-            }
+        int arr[256];
+        for (int i = 0; i < 256; i++) {
+            arr[i] = 0;
         }
 
-        s_node **set_tree = connecting_nodes(h, initial_nodes);
-        char *temp_seq = (char *) malloc(sizeof(char) * 8);
-        struct sequence *sym_codes = (struct sequence *) calloc(sizeof(struct sequence), 256);
-        int max;
-
-        j = 0;
-        encoding_symbols(set_tree[0], temp_seq, &j, sym_codes, &max);
-        if (y == 1) {
-            sym_codes[set_tree[0]->key].cod[0] = '1';
-            sym_codes[set_tree[0]->key].otm = 0;
-        }
-
-        char *code = (char *) calloc(sizeof(char), max * file_size);
-        fwrite(&file_size, sizeof(int), 1, outfile);
-        fwrite(&y, sizeof(int), 1, outfile);
-
-        int b = 0; // used for following the encoded sequence's length
-        j = 0;
-        while (j < file_size) {
-            int k = 0; // used for following the symbol code's length
-            if ((sym_codes[original_file[j]].cod[k] != '\0') && (sym_codes[original_file[j]].otm != 1)) {
-                int t = 0; // symbol code's length
-                while (sym_codes[original_file[j]].cod[k] != '\0') {
-                    t++;
-                    k++;
+        while (temp_file_size > 0) {
+            if ((temp_file_size / STEP) > 0) {
+                fread(original_file, sizeof(unsigned char), STEP, infile);
+                for (int i = 0; i < STEP; i++) {
+                    arr[original_file[i]]++;
                 }
-
-                fwrite(&original_file[j], sizeof(char), 1, outfile);
-                fwrite(&t, sizeof(char), 1, outfile);
-
-                sym_codes[original_file[j]].otm = 1;
-                printing_sym_code(sym_codes, original_file, j, outfile);
+                temp_file_size -= STEP;
+            } else {
+                fread(original_file, sizeof(unsigned char), temp_file_size % STEP, infile);
+                for (int i = 0; i < temp_file_size % STEP; i++) {
+                    arr[original_file[i]]++;
+                }
+                temp_file_size = 0;
             }
-            k = 0;
-            while (sym_codes[original_file[j]].cod[k] != '\0') {
-                code[b] = sym_codes[original_file[j]].cod[k];
-                k++;
-                b++;
-            }
-            j++;
         }
-        printing_encoded_sequence(b, code, outfile);
+
+        int x = 0;
+        for (int i = 0; i < 256; i++) {
+            if (arr[i] != 0) {
+                x++;
+            }
+        }
+
+        int sym_amount = x;
+        struct node **arr_nodes = (struct node **) calloc(sizeof(struct node *), x);
+
+        x = 0;
+        for (int i = 0; i < 256; i++) {
+            if (arr[i] > 0) {
+                arr_nodes[x] = make_node(i, arr[i]);
+                x++;
+            }
+        }
+
+        while (x != 1) {
+            qsort(arr_nodes, x, sizeof(struct node *), comparator);
+            arr_nodes[0] = join_nodes(arr_nodes[0], arr_nodes[1]);
+            for (int i = 1; i < x - 1; i++) {
+                arr_nodes[i] = arr_nodes[i + 1];
+            }
+            arr_nodes[x - 1] = NULL;
+            x--;
+        }
+
+        char *temp_code = (char *) calloc(sizeof(char), 8);
+        int t_c_index = 0;
+
+        char **arr_codes = (char **) malloc(sizeof(char *) * 256);
+        for (int i = 0; i < 256; i++) {
+            arr_codes[i] = (char *) calloc(sizeof(char), 8);
+        }
+
+        make_codes(arr_nodes[0], temp_code, &t_c_index, arr_codes);
+
+        fwrite(&file_size, sizeof(int), 1, outfile);
+        fwrite(&sym_amount, sizeof(int), 1, outfile);
+
+        for (int i = 0; i < 256; i++) {
+            if (arr_codes[i][0] != '\0') {
+                int length = 0;
+                while (arr_codes[i][length] != '\0') {
+                    length++;
+                }
+                fwrite(&i, sizeof(char), 1, outfile);
+                fwrite(&length, sizeof(char), 1, outfile);
+                print_sym_code(arr_codes[i], outfile);
+            }
+        }
+
+        char *code = (char *) calloc(sizeof(char), file_size * 8);
+
+        rewind(infile);
+        int k = 0;
+        while (file_size > 0) {
+            if ((file_size / STEP) > 0) {
+                fread(original_file, sizeof(unsigned char), STEP, infile);
+                for (int i = 0; i < STEP; i++) {
+                    int t = 0;
+                    while (arr_codes[original_file[i]][t] != '\0') {
+                        code[k] = arr_codes[original_file[i]][t];
+                        k++;
+                        t++;
+                    }
+                }
+                file_size -= STEP;
+            } else {
+                fread(original_file, sizeof(unsigned char), file_size % STEP, infile);
+                for (int i = 0; i < file_size % STEP; i++) {
+                    int t = 0;
+                    while (arr_codes[original_file[i]][t] != '\0') {
+                        code[k] = arr_codes[original_file[i]][t];
+                        k++;
+                        t++;
+                    }
+                }
+                file_size = 0;
+            }
+        }
+
+        printing_encoded_sequence(k, code, outfile);
     }
 }

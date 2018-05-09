@@ -3,6 +3,7 @@
 #include "functions.h"
 
 int main(int argc, char *argv[]) {
+
     int check_fail = 0;
     int e_cmd, d_cmd;
     finding_commands(argc, argv, &e_cmd, &d_cmd, &check_fail);

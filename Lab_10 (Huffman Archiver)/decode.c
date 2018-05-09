@@ -21,7 +21,7 @@ void decoding(char *argv[]) {
         fread(&orig_f_size, sizeof(int), 1, infile);
         fread(&coded_sym_amount, sizeof(int), 1, infile);
 
-        s_node *final_tree = new_tree_node(-2, 0);
+        struct node *final_tree = make_node(-2, 0);
         for (int y = 0; y < coded_sym_amount; y++) {
             unsigned char sym;
             fread(&sym, sizeof(char), 1, infile);
@@ -37,8 +37,8 @@ void decoding(char *argv[]) {
             restoring_tree(final_tree, code_sequence, &h, &code_length, sym, &f, &d, &check);
         }
 
-        s_node *start_node = final_tree;
-        s_node *current_node = start_node;
+        struct node *start_node = final_tree;
+        struct node *current_node = start_node;
 
         int p = 0; // used for following the number of original file's symbols
         while (p < orig_f_size) {
@@ -47,8 +47,8 @@ void decoding(char *argv[]) {
             for (int x = 7; x >= 0; x--) {
                 if ((sym & (1 << x)) == 0) {
                     current_node = current_node->left;
-                    if ((current_node->key) != -2) {
-                        fputc(current_node->key, outfile);
+                    if ((current_node->value) != -2) {
+                        fputc(current_node->value, outfile);
                         current_node = start_node;
                         p++;
                         if (p == orig_f_size)
@@ -56,8 +56,8 @@ void decoding(char *argv[]) {
                     }
                 } else {
                     current_node = current_node->right;
-                    if ((current_node->key) != -2) {
-                        fputc(current_node->key, outfile);
+                    if ((current_node->value) != -2) {
+                        fputc(current_node->value, outfile);
                         current_node = start_node;
                         p++;
                         if (p == orig_f_size)
