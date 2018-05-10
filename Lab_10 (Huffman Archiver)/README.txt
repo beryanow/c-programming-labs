@@ -22,7 +22,7 @@ Executable file size and data size are not more than 1024 Kb (each taken separat
 #include <stdio.h>
 #include <stdlib.h>
 
-#define STEP 1024
+#define STEP 2048
 
 struct node {
 	int value;
@@ -161,7 +161,7 @@ void make_codes(struct node *in_node, char *in_temp_code, int *t_c_index, char *
 	}
 }
 
-void correcting_bytes(int *h, int *d, int *code_length, int *f) {
+void correct_bytes(int *h, int *d, int *code_length, int *f) {
 	(*h)++;
 	(*d)--;
 	if (*h / 8 > 0) {
@@ -172,35 +172,35 @@ void correcting_bytes(int *h, int *d, int *code_length, int *f) {
 	}
 }
 
-void restoring_tree(struct node *p, unsigned char *ar, int *h, int *code_length, unsigned char r, int *f, int *d, int *m) {
-	*m = 0;
-	while (*h < *code_length) {
-		if ((ar[*f] & (1 << *d)) == 0) {
-			if (p->left == NULL) {
-				p->left = make_node(-2, 0);
-				correcting_bytes(h, d, code_length, f);
-				restoring_tree(p->left, ar, h, code_length, r, f, d, m);
+void restore_tree(struct node *in_node, unsigned char *sym_code, int *h, int *in_code_length, unsigned char in_sym, int *f, int *d, int *in_check) {
+	*in_check = 0;
+	while (*h < *in_code_length) {
+		if ((sym_code[*f] & (1 << *d)) == 0) {
+			if (in_node->left == NULL) {
+				in_node->left = make_node(-2, 0);
+				correct_bytes(h, d, in_code_length, f);
+				restore_tree(in_node->left, sym_code, h, in_code_length, in_sym, f, d, in_check);
 			}
 			else {
-				correcting_bytes(h, d, code_length, f);
-				restoring_tree(p->left, ar, h, code_length, r, f, d, m);
+				correct_bytes(h, d, in_code_length, f);
+				restore_tree(in_node->left, sym_code, h, in_code_length, in_sym, f, d, in_check);
 			}
 		}
-		else if ((ar[*f] & (1 << *d)) == (1 << *d)) {
-			if (p->right == NULL) {
-				p->right = make_node(-2, 0);
-				correcting_bytes(h, d, code_length, f);
-				restoring_tree(p->right, ar, h, code_length, r, f, d, m);
+		else if ((sym_code[*f] & (1 << *d)) == (1 << *d)) {
+			if (in_node->right == NULL) {
+				in_node->right = make_node(-2, 0);
+				correct_bytes(h, d, in_code_length, f);
+				restore_tree(in_node->right, sym_code, h, in_code_length, in_sym, f, d, in_check);
 			}
 			else {
-				correcting_bytes(h, d, code_length, f);
-				restoring_tree(p->right, ar, h, code_length, r, f, d, m);
+				correct_bytes(h, d, in_code_length, f);
+				restore_tree(in_node->right, sym_code, h, in_code_length, in_sym, f, d, in_check);
 			}
 		}
-		*m = 1;
+		*in_check = 1;
 	}
-	if (*m == 0)
-		p->value = r;
+	if (*in_check == 0)
+		in_node->value = in_sym;
 }
 
 void print_help() {
@@ -209,11 +209,11 @@ void print_help() {
 		"(!) inputfilename must not be empty");
 }
 
-void decoding(char *argv[]) {
-	int i = 2;
+void decode(char *argv[]) {
+	int m = 2;
 
-	FILE *infile = fopen(argv[i], "rb");
-	FILE *outfile = fopen(argv[i + 1], "wb");
+	FILE *infile = fopen(argv[m], "rb");
+	FILE *outfile = fopen(argv[m + 1], "wb");
 
 	int check_fail = 0;
 	if (infile == NULL) {
@@ -237,17 +237,17 @@ void decoding(char *argv[]) {
 			unsigned char *code_sequence = (unsigned char *)calloc(sizeof(unsigned char), (size_t)code_length / 9 + 1);
 			fread(code_sequence, sizeof(char), (size_t)code_length / 9 + 1, infile);
 
-			int h = 0; // used for following code_length
-			int f = 0; // used for following needed amount of the coded symbol's bytes
-			int d = 7; // used for observing the bit required
-			int check; // used for monitoring whether the symbol has been already placed into the tree
-			restoring_tree(final_tree, code_sequence, &h, &code_length, sym, &f, &d, &check);
+			int h = 0; // code_length index
+			int f = 0; // coded symbol's bytes index
+			int d = 7; // the required bit's index
+			int check; // monitors whether the symbol has been already placed into the tree
+			restore_tree(final_tree, code_sequence, &h, &code_length, sym, &f, &d, &check);
 		}
 
 		struct node *start_node = final_tree;
 		struct node *current_node = start_node;
 
-		int p = 0; // used for following the number of original file's symbols
+		int p = 0; // follows the number of original file's symbols
 		while (p < orig_f_size) {
 			char sym;
 			fread(&sym, sizeof(char), 1, infile);
@@ -277,7 +277,23 @@ void decoding(char *argv[]) {
 	}
 }
 
-void encoding(char* argv[]) {
+void add_code_parts(char **in_arr_codes, unsigned char *original_file, int i, char *code, int* k, FILE* outfile) {
+	int t = 0;
+	while (in_arr_codes[original_file[i]][t] != '\0') {
+		code[*k] = in_arr_codes[original_file[i]][t];
+		(*k)++;
+		t++;
+		if (*k == STEP) {
+			print_encoded_sequence(*k, code, outfile);
+			*k = 0;
+			for (int l = STEP - 1; l >= 0; l--) {
+				code[l] = '\0';
+			}
+		}
+	}
+}
+
+void encode(char* argv[]) {
 	int l = 2;
 
 	FILE *infile = fopen(argv[l], "rb");
@@ -375,38 +391,14 @@ void encoding(char* argv[]) {
 			if ((file_size / STEP) > 0) {
 				fread(original_file, sizeof(unsigned char), STEP, infile);
 				for (int i = 0; i < STEP; i++) {
-					int t = 0;
-					while (arr_codes[original_file[i]][t] != '\0') {
-						code[k] = arr_codes[original_file[i]][t];
-						k++;
-						t++;
-						if (k == STEP) {
-							print_encoded_sequence(k, code, outfile);
-							k = 0;
-							for (int l = STEP - 1; l >= 0; l--) {
-								code[l] = '\0';
-							}
-						}
-					}
+					add_code_parts(arr_codes, original_file, i, code, &k, outfile);
 				}
 				file_size -= STEP;
 			}
 			else {
 				fread(original_file, sizeof(unsigned char), file_size % STEP, infile);
 				for (int i = 0; i < file_size % STEP; i++) {
-					int t = 0;
-					while (arr_codes[original_file[i]][t] != '\0') {
-						code[k] = arr_codes[original_file[i]][t];
-						k++;
-						t++;
-						if (k == STEP) {
-							print_encoded_sequence(k, code, outfile);
-							k = 0;
-							for (int l = STEP - 1; l >= 0; l--) {
-								code[l] = '\0';
-							}
-						}
-					}
+					add_code_parts(arr_codes, original_file, i, code, &k, outfile);
 				}
 				file_size = 0;
 			}
@@ -425,9 +417,9 @@ int main(int argc, char *argv[]) {
 
 	if (check_fail == 0) {
 		if (e_cmd == 1)
-			encoding(argv);
+			encode(argv);
 		else
-			decoding(argv);
+			decode(argv);
 	}
 	else
 		print_help();
