@@ -2,24 +2,19 @@
 #include <stdlib.h>
 #include "functions.h"
 
-void finding_commands(int argc, char *argv[], int *e_cmd, int *d_cmd, int *check_fail) {
-    for (int i = 1; i < argc - 2; i++) {
-        if (argv[i][0] == '-') {
-            switch (argv[i][1]) {
-                case 'e':
-                    *e_cmd = 1;
-                    break;
-                case 'd':
-                    *d_cmd = 1;
-                    break;
-                default:
-                    *check_fail = 1;
-                    break;
-            }
-        } else {
-            *check_fail = 1;
-        }
-    }
+s_node *join_nodes(s_node *in_left, s_node *in_right) {
+    s_node *joined_node = (s_node *) malloc(sizeof(s_node));
+
+    joined_node->value = -1;
+    joined_node->amount = in_left->amount + in_right->amount;
+    joined_node->left = in_left;
+    joined_node->right = in_right;
+
+    return joined_node;
+};
+
+int comparator(const void *x1, const void *x2) {
+    return (*(s_node **) x1)->amount - (*(s_node **) x2)->amount;
 }
 
 void print_sym_code(char *sym_code, FILE *outfile) {
@@ -45,7 +40,7 @@ void print_sym_code(char *sym_code, FILE *outfile) {
     }
 }
 
-void printing_encoded_sequence(int b, const char *code, FILE *outfile) {
+void print_encoded_sequence(int b, const char *code, FILE *outfile) {
     int j = 0;
     unsigned char buff = 0;
     int buff_size = 0;
@@ -68,8 +63,8 @@ void printing_encoded_sequence(int b, const char *code, FILE *outfile) {
     }
 }
 
-struct node *make_node(int in_value, int in_amount) {
-    struct node *new_node = (struct node *) malloc(sizeof(struct node));
+s_node *make_node(int in_value, int in_amount) {
+    s_node *new_node = (s_node *) malloc(sizeof(s_node));
 
     new_node->value = in_value;
     new_node->amount = in_amount;
@@ -79,22 +74,7 @@ struct node *make_node(int in_value, int in_amount) {
     return new_node;
 };
 
-struct node *join_nodes(struct node *in_left, struct node *in_right) {
-    struct node *joined_node = (struct node *) malloc(sizeof(struct node));
-
-    joined_node->value = -1;
-    joined_node->amount = in_left->amount + in_right->amount;
-    joined_node->left = in_left;
-    joined_node->right = in_right;
-
-    return joined_node;
-};
-
-int comparator(const void *x1, const void *x2) {
-    return (*(struct node **) x1)->amount - (*(struct node **) x2)->amount;
-}
-
-void make_codes(struct node *in_node, char *in_temp_code, int *t_c_index, char **arr_codes) {
+void make_codes(s_node *in_node, char *in_temp_code, int *t_c_index, char **arr_codes) {
     if ((in_node->left == NULL) && (in_node->right == NULL)) {
         arr_codes[in_node->value][0] = '0';
     } else {
@@ -128,7 +108,7 @@ void make_codes(struct node *in_node, char *in_temp_code, int *t_c_index, char *
     }
 }
 
-void correcting_bytes(int *h, int *d, int *code_length, int *f) {
+void correct_bytes(int *h, int *d, int *code_length, int *f) {
     (*h)++;
     (*d)--;
     if (*h / 8 > 0) {
@@ -139,36 +119,74 @@ void correcting_bytes(int *h, int *d, int *code_length, int *f) {
     }
 }
 
-void restoring_tree(struct node *p, unsigned char *ar, int *h, int *code_length, unsigned char r, int *f, int *d, int *m) {
-    *m = 0;
-    while (*h < *code_length) {
-        if ((ar[*f] & (1 << *d)) == 0) {
-            if (p->left == NULL) {
-                p->left = make_node(-2, 0);
-                correcting_bytes(h, d, code_length, f);
-                restoring_tree(p->left, ar, h, code_length, r, f, d, m);
+void restore_tree(s_node *in_node, unsigned char *sym_code, int *h, int *in_code_length, unsigned char in_sym, int *f, int *d, int *in_check) {
+    *in_check = 0;
+    while (*h < *in_code_length) {
+        if ((sym_code[*f] & (1 << *d)) == 0) {
+            if (in_node->left == NULL) {
+                in_node->left = make_node(-2, 0);
+
+                correct_bytes(h, d, in_code_length, f);
+                restore_tree(in_node->left, sym_code, h, in_code_length, in_sym, f, d, in_check);
             } else {
-                correcting_bytes(h, d, code_length, f);
-                restoring_tree(p->left, ar, h, code_length, r, f, d, m);
+                correct_bytes(h, d, in_code_length, f);
+                restore_tree(in_node->left, sym_code, h, in_code_length, in_sym, f, d, in_check);
             }
-        } else if ((ar[*f] & (1 << *d)) == (1 << *d)) {
-            if (p->right == NULL) {
-                p->right = make_node(-2, 0);
-                correcting_bytes(h, d, code_length, f);
-                restoring_tree(p->right, ar, h, code_length, r, f, d, m);
+        } else if ((sym_code[*f] & (1 << *d)) == (1 << *d)) {
+            if (in_node->right == NULL) {
+                in_node->right = make_node(-2, 0);
+
+                correct_bytes(h, d, in_code_length, f);
+                restore_tree(in_node->right, sym_code, h, in_code_length, in_sym, f, d, in_check);
             } else {
-                correcting_bytes(h, d, code_length, f);
-                restoring_tree(p->right, ar, h, code_length, r, f, d, m);
+                correct_bytes(h, d, in_code_length, f);
+                restore_tree(in_node->right, sym_code, h, in_code_length, in_sym, f, d, in_check);
             }
         }
-        *m = 1;
+        *in_check = 1;
     }
-    if (*m == 0)
-        p->value = r;
+    if (*in_check == 0)
+        in_node->value = in_sym;
 }
 
 void print_help() {
     printf("USAGE:\n [for decoding]: -d inputfilename outputfilename \n "
            "[for encoding]: -e inputfilename outputfrilename \n "
            "(!) inputfilename must not be empty");
+}
+
+void finding_commands(int argc, char *argv[], int *e_cmd, int *d_cmd, int *check_fail) {
+    for (int i = 1; i < argc - 2; i++) {
+        if (argv[i][0] == '-') {
+            switch (argv[i][1]) {
+                case 'e':
+                    *e_cmd = 1;
+                    break;
+                case 'd':
+                    *d_cmd = 1;
+                    break;
+                default:
+                    *check_fail = 1;
+                    break;
+            }
+        } else {
+            *check_fail = 1;
+        }
+    }
+}
+
+void add_code_parts(char **in_arr_codes, unsigned char *original_file, int i, char *code, int *k, FILE *outfile) {
+    int t = 0;
+    while (in_arr_codes[original_file[i]][t] != '\0') {
+        code[*k] = in_arr_codes[original_file[i]][t];
+        (*k)++;
+        t++;
+        if (*k == STEP) {
+            print_encoded_sequence(*k, code, outfile);
+            *k = 0;
+            for (int l = STEP - 1; l >= 0; l--) {
+                code[l] = '\0';
+            }
+        }
+    }
 }

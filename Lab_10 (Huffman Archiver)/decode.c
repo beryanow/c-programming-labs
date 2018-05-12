@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include "functions.h"
 
-void decoding(char *argv[]) {
-    int i = 2;
+void decode_data(char *argv[]) {
+    int m = 2;
 
-    FILE *infile = fopen(argv[i], "rb");
-    FILE *outfile = fopen(argv[i + 1], "wb");
+    FILE *infile = fopen(argv[m], "rb");
+    FILE *outfile = fopen(argv[m + 1], "wb");
 
     int check_fail = 0;
     if (infile == NULL) {
@@ -21,26 +21,33 @@ void decoding(char *argv[]) {
         fread(&orig_f_size, sizeof(int), 1, infile);
         fread(&coded_sym_amount, sizeof(int), 1, infile);
 
-        struct node *final_tree = make_node(-2, 0);
+        s_node *final_tree = make_node(-2, 0);
         for (int y = 0; y < coded_sym_amount; y++) {
             unsigned char sym;
             fread(&sym, sizeof(char), 1, infile);
             int code_length = 0;
             fread(&code_length, sizeof(char), 1, infile);
-            unsigned char *code_sequence = (unsigned char *) calloc(sizeof(unsigned char), (size_t) code_length / 9 + 1);
-            fread(code_sequence, sizeof(char), (size_t) code_length / 9 + 1, infile);
 
-            int h = 0; // used for following code_length
-            int f = 0; // used for following needed amount of the coded symbol's bytes
-            int d = 7; // used for observing the bit required
-            int check; // used for monitoring whether the symbol has been already placed into the tree
-            restoring_tree(final_tree, code_sequence, &h, &code_length, sym, &f, &d, &check);
+            int z = 0;
+            if (code_length % 8 == 0)
+                z = code_length / 8;
+            else
+                z = code_length / 8 + 1;
+
+            unsigned char *code_sequence = (unsigned char *) calloc(sizeof(unsigned char), (size_t) z);
+            fread(code_sequence, sizeof(char), (size_t) z, infile);
+
+            int h = 0; // code_length index
+            int f = 0; // coded symbol's bytes index
+            int d = 7; // the required bit's index
+            int check; // monitors whether the symbol has been already placed into the tree
+            restore_tree(final_tree, code_sequence, &h, &code_length, sym, &f, &d, &check);
         }
 
-        struct node *start_node = final_tree;
-        struct node *current_node = start_node;
+        s_node *start_node = final_tree;
+        s_node *current_node = start_node;
 
-        int p = 0; // used for following the number of original file's symbols
+        int p = 0; // follows the number of original file's symbols
         while (p < orig_f_size) {
             char sym;
             fread(&sym, sizeof(char), 1, infile);

@@ -10,9 +10,9 @@ int main(int argc, char *argv[]) {
 
     if (check_fail == 0) {
         if (e_cmd == 1)
-            encoding(argv);
+            encode_data(argv);
         else
-            decoding(argv);
+            decode_data(argv);
     } else
         print_help();
 

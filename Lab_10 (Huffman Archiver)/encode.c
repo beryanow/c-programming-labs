@@ -2,9 +2,7 @@
 #include <stdlib.h>
 #include "functions.h"
 
-#define STEP 1024
-
-void encoding (char* argv[]) {
+void encode_data(char *argv[]) {
     int l = 2;
 
     FILE *infile = fopen(argv[l], "rb");
@@ -48,7 +46,7 @@ void encoding (char* argv[]) {
         }
 
         int sym_amount = x;
-        struct node **arr_nodes = (struct node **) calloc(sizeof(struct node *), x);
+        s_node **arr_nodes = (s_node **) calloc(sizeof(s_node *), x);
 
         x = 0;
         for (int i = 0; i < 256; i++) {
@@ -59,7 +57,7 @@ void encoding (char* argv[]) {
         }
 
         while (x != 1) {
-            qsort(arr_nodes, x, sizeof(struct node *), comparator);
+            qsort(arr_nodes, x, sizeof(s_node *), comparator);
             arr_nodes[0] = join_nodes(arr_nodes[0], arr_nodes[1]);
             for (int i = 1; i < x - 1; i++) {
                 arr_nodes[i] = arr_nodes[i + 1];
@@ -93,7 +91,7 @@ void encoding (char* argv[]) {
             }
         }
 
-        char *code = (char *) calloc(sizeof(char), file_size * 8);
+        char *code = (char *) calloc(sizeof(char), STEP);
 
         rewind(infile);
         int k = 0;
@@ -101,28 +99,19 @@ void encoding (char* argv[]) {
             if ((file_size / STEP) > 0) {
                 fread(original_file, sizeof(unsigned char), STEP, infile);
                 for (int i = 0; i < STEP; i++) {
-                    int t = 0;
-                    while (arr_codes[original_file[i]][t] != '\0') {
-                        code[k] = arr_codes[original_file[i]][t];
-                        k++;
-                        t++;
-                    }
+                    add_code_parts(arr_codes, original_file, i, code, &k, outfile);
                 }
                 file_size -= STEP;
             } else {
                 fread(original_file, sizeof(unsigned char), file_size % STEP, infile);
                 for (int i = 0; i < file_size % STEP; i++) {
-                    int t = 0;
-                    while (arr_codes[original_file[i]][t] != '\0') {
-                        code[k] = arr_codes[original_file[i]][t];
-                        k++;
-                        t++;
-                    }
+                    add_code_parts(arr_codes, original_file, i, code, &k, outfile);
                 }
                 file_size = 0;
             }
         }
-
-        printing_encoded_sequence(k, code, outfile);
+        if (k != 0) {
+            print_encoded_sequence(k, code, outfile);
+        }
     }
 }
