@@ -2,7 +2,7 @@ DESCRIPTION:
 Create a simple archiver that fulfils Huffman algorithm.  
 
 USAGE:
--c infilename outfilename
+-e infilename outfilename
 to encode a random file infilename to the Huffman-encoded outfilename file.
 
 -d infilename outfilename
