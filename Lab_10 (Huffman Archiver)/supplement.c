@@ -14,7 +14,7 @@ s_node *join_nodes(s_node *in_left, s_node *in_right) {
 };
 
 int comparator(const void *x1, const void *x2) {
-    return (*(s_node **) x1)->amount - (*(s_node **) x2)->amount;
+    return (*(s_node **) x2)->amount - (*(s_node **) x1)->amount;
 }
 
 void print_sym_code(char *sym_code, FILE *outfile) {
@@ -74,14 +74,14 @@ s_node *make_node(int in_value, int in_amount) {
     return new_node;
 };
 
-void make_codes(s_node *in_node, char *in_temp_code, int *t_c_index, char **arr_codes) {
+void make_codes(s_node *in_node, char *in_temp_code, int *t_c_index, char **arr_codes, int *single_check) {
     if ((in_node->left == NULL) && (in_node->right == NULL)) {
-        arr_codes[in_node->value][0] = '0';
+        *single_check = 1;
     } else {
         if (in_node->left->value == -1) {
             in_temp_code[*t_c_index] = '0';
             (*t_c_index)++;
-            make_codes(in_node->left, in_temp_code, t_c_index, arr_codes);
+            make_codes(in_node->left, in_temp_code, t_c_index, arr_codes, single_check);
         } else {
             in_temp_code[*t_c_index] = '0';
             int y = 0;
@@ -93,7 +93,7 @@ void make_codes(s_node *in_node, char *in_temp_code, int *t_c_index, char **arr_
         if (in_node->right->value == -1) {
             in_temp_code[*t_c_index] = '1';
             (*t_c_index)++;
-            make_codes(in_node->right, in_temp_code, t_c_index, arr_codes);
+            make_codes(in_node->right, in_temp_code, t_c_index, arr_codes, single_check);
         } else {
             in_temp_code[*t_c_index] = '1';
             int y = 0;
@@ -156,18 +156,21 @@ void print_help() {
 }
 
 void finding_commands(int argc, char *argv[], int *e_cmd, int *d_cmd, int *check_fail) {
-    for (int i = 1; i < argc - 2; i++) {
+    if (argc != 4) {
+        *check_fail = 1;
+    }
+    for (int i = 1; i <= argc - 1; i++) {
         if (argv[i][0] == '-') {
             switch (argv[i][1]) {
                 case 'e':
                     *e_cmd = 1;
-                    break;
+                    return;
                 case 'd':
                     *d_cmd = 1;
-                    break;
+                    return;
                 default:
                     *check_fail = 1;
-                    break;
+                    return;
             }
         } else {
             *check_fail = 1;
