@@ -1,7 +1,7 @@
 #ifndef PROJECT_2_FUNCTIONS_H
 #define PROJECT_2_FUNCTIONS_H
 
-#define STEP 2048
+#define STEP 2048 // must be divisible by 8
 
 typedef struct node {
     int value;
